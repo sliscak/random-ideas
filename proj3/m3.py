@@ -25,17 +25,17 @@ class Net(nn.Module):
         # x = torch.Tensor([torch.cosine_similarity(x, self.classes[i], dim=0) for i in range(3)])
         # x2 = torch.cosine_similarity(x, self.classes[0], dim=0)
         # for i in range(2)
-        # x2 = torch.cosine_similarity(x, self.classes[0], 0).unsqueeze(0)
-        x2 = torch.nn.functional.mse_loss(x, self.classes[0], 0).unsqueeze(0)
+        x2 = torch.cosine_similarity(x, self.classes[0], 0).unsqueeze(0)
+        # x2 = torch.nn.functional.mse_loss(x, self.classes[0], 0).unsqueeze(0)
         # x3 = torch.cosine_similarity(x, self.classes[1], 0).unsqueeze(0)
         print(f'x: {x}')
         print(f'c: {self.classes}')
         for i in range(2):
-            # x2 = torch.cat((x2, torch.cosine_similarity(x,self.classes[i+1], 0).unsqueeze(0)))
+            x2 = torch.cat((x2, torch.cosine_similarity(x,self.classes[i+1], 0).unsqueeze(0)))
             # x2 = torch.cat((x2, torch.nn.functional.mse_loss(x, self.classes[i], 0).unsqueeze(0)), 0)
         x = x2
         # x = 1/x2
-        print(f'f: {torch.nn.functional.mse_loss(x, self.classes[i], 0)}')
+        # print(f'f: {torch.nn.functional.mse_loss(x, self.classes[i], 0)}')
         print(f'x: {x}')
         x = torch.softmax(x, dim=0)
         return x
