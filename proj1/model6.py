@@ -5,19 +5,19 @@ class Net(nn.Module):
     # input is 64 x 64 x 3 image
     def __init__(self):
         super(Net, self).__init__()
-        self.p = nn.Parameter(torch.randn(100), requires_grad=True)
+        self.p = nn.Parameter(torch.randn(200), requires_grad=True)
         self.p2 = nn.Parameter(torch.randn(32 * 32 * 3), requires_grad=True)
         #
         # # use sigmoid
-        self.forget_gate = nn.Linear(100, 100)
+        self.forget_gate = nn.Linear(200, 200)
         # # use tanh
-        self.add_gate = nn.Linear(100, 100)
+        self.add_gate = nn.Linear(200, 200)
         #
-        self.fc1 = nn.Linear(32*32*3, 100)
-        self.fc2 = nn.Linear(100, 32*32*3)
+        self.fc1 = nn.Linear(32*32*3, 200)
+        self.fc2 = nn.Linear(200, 32*32*3)
 
-        self.ff1 = nn.Linear(100, 100)
-        self.ff2 = nn.Linear(100, 1)
+        self.ff1 = nn.Linear(200, 200)
+        self.ff2 = nn.Linear(200, 1)
 
     def forward(self, img):
         x = self.fc1(img)

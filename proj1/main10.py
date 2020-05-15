@@ -28,12 +28,12 @@ def main():
     criterion = torch.nn.MSELoss()#torch.nn.MSELoss(reduction='sum')
     # optimizer = torch.optim.Adam(net.parameters(), lr=0.00001)
     optimizer = torch.optim.SGD(params=net.parameters(), lr=0.001)
-    env = gym.make("procgen:procgen-heist-v0", start_level=0, num_levels=1)
+    env = gym.make("procgen:procgen-coinrun-v0", start_level=0, num_levels=1)
     print(env.action_space)
     # net = None
     train = True
     for i_episode in range(20):
-        env = gym.make("procgen:procgen-heist-v0", start_level=0, num_levels=1)
+        env = gym.make("procgen:procgen-coinrun-v0", start_level=0, num_levels=10)
         observation = env.reset()
         last_image = None
         for t in range(10000):
