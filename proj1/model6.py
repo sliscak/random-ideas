@@ -25,7 +25,7 @@ class Net(nn.Module):
         i = self.ff2(g)
         i = torch.sigmoid(i)
         c = 0
-        while(i < 0.5):
+        while(i < 1):
             c += 1
             fg = self.forget_gate(x)
             fg = torch.sigmoid(x)
