@@ -1,5 +1,5 @@
 """"
-    A dynamic neural network with nearly unlimited capacity??
+    A variant of Adaptive Time Neural Network
 """
 
 import torch
