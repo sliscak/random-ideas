@@ -26,7 +26,7 @@ class DynamicNet(nn.Module):
                         nn.Linear(10, 10),
                         nn.ReLU(),
                         nn.Linear(10, 1),
-                        nn.ReLU(model.py)
+                        nn.ReLU()
                     )
                 )
             try:

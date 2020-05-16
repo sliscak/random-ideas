@@ -31,7 +31,6 @@ class AdaptNet(nn.Module):
         confidence = 0
         output = None
         c = 0
-        grow = False
         while confidence < 1:
             output = self.blocks[c](x)
             confidence += self.classifiers[c](output)
