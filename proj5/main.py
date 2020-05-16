@@ -1,4 +1,3 @@
-# Test a dynamic neural network with nearly unlimited capacity??
 from proj5.model import DynamicNet
 from time import sleep
 import torch
