@@ -18,8 +18,3 @@ while True:
     optimizer.step()
     print('*'*10)
     sleep(1)
-    # print(optimizer.param_groups)
-    # exit()
-    # if c >= 2:
-    #     print(len(list(dynet.parameters())))
-    #     exit()
