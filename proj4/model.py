@@ -5,31 +5,33 @@
 import torch
 from torch import nn
 
+
 class DynamicNet(nn.Module):
     def __init__(self):
         super(DynamicNet, self).__init__()
         self.blocks = nn.ModuleList([nn.Sequential(
-                        nn.Linear(1, 10),
-                        nn.ReLU(),
-                        nn.Linear(10, 10),
-                        nn.ReLU(),
-                        nn.Linear(10, 1),
-                        nn.ReLU()
-                    )])
+            nn.Linear(1, 3),
+            nn.ReLU(),
+            nn.Linear(3, 3),
+            nn.ReLU(),
+            nn.Linear(3, 1),
+            nn.ReLU()
+        )])
         self.classifiers = nn.ModuleList([nn.Sequential(
-                        nn.Linear(1, 10),
-                        nn.ReLU(),
-                        nn.Linear(10, 10),
-                        nn.ReLU(),
-                        nn.Linear(10, 1),
-                        nn.Sigmoid()
-                    )])
+            nn.Linear(1, 3),
+            nn.ReLU(),
+            nn.Linear(3, 3),
+            nn.ReLU(),
+            nn.Linear(3, 1),
+            nn.Sigmoid()
+        )])
 
     def forward(self, x):
         confidence = 0
         output = None
         c = 0
         max_depth = 100
+        grow = False
         while confidence < 1:
             try:
                 output = self.blocks[c](x)
@@ -37,11 +39,11 @@ class DynamicNet(nn.Module):
                 print(f'Creating new Block')
                 self.blocks.append(
                     nn.Sequential(
-                        nn.Linear(1, 10),
+                        nn.Linear(1, 3),
                         nn.ReLU(),
-                        nn.Linear(10, 10),
+                        nn.Linear(3, 3),
                         nn.ReLU(),
-                        nn.Linear(10, 1),
+                        nn.Linear(3, 1),
                         nn.ReLU()
                     )
                 )
@@ -52,19 +54,20 @@ class DynamicNet(nn.Module):
                 print(f'Creating new Classifier')
                 self.classifiers.append(
                     nn.Sequential(
-                        nn.Linear(1, 10),
+                        nn.Linear(1, 3),
                         nn.ReLU(),
-                        nn.Linear(10, 10),
+                        nn.Linear(3, 3),
                         nn.ReLU(),
-                        nn.Linear(10, 1),
+                        nn.Linear(3, 1),
                         nn.Sigmoid()
                     )
                 )
                 confidence += self.classifiers[c](output)
+                grow = True
             c += 1
             print(f'Confidence: {confidence}')
             print(f'Executed Cycles: {c}')
             if c >= max_depth:
                 print(f'Reached max depth/cycles: {max_depth}')
                 break
-        return output
+        return output, grow
