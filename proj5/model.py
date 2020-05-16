@@ -11,19 +11,19 @@ class AdaptNet(nn.Module):
         super(AdaptNet, self).__init__()
         self.max_depth = max_depth
         self.blocks = nn.ModuleList([nn.Sequential(
-            nn.Linear(1, 3),
+            nn.Linear(1, 10),
             nn.ReLU(),
-            nn.Linear(3, 3),
+            nn.Linear(10, 10),
             nn.ReLU(),
-            nn.Linear(3, 1),
+            nn.Linear(10, 1),
             nn.ReLU()
         ) for _ in range(max_depth)])
         self.classifiers = nn.ModuleList([nn.Sequential(
-            nn.Linear(1, 3),
+            nn.Linear(1, 10),
             nn.ReLU(),
-            nn.Linear(3, 3),
+            nn.Linear(10, 10),
             nn.ReLU(),
-            nn.Linear(3, 1),
+            nn.Linear(10, 1),
             nn.Sigmoid()
         ) for _ in range(max_depth)])
 
