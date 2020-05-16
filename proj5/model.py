@@ -6,9 +6,9 @@ import torch
 from torch import nn
 
 
-class DynamicNet(nn.Module):
+class AdaptNet(nn.Module):
     def __init__(self, max_depth = 100):
-        super(DynamicNet, self).__init__()
+        super(AdaptNet, self).__init__()
         self.max_depth = max_depth
         self.blocks = nn.ModuleList([nn.Sequential(
             nn.Linear(1, 3),
