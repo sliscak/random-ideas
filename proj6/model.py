@@ -2,7 +2,6 @@
     A variant of Adaptive Time Neural Network
 """
 
-import torch
 from torch import nn
 
 
