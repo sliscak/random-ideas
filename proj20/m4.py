@@ -13,28 +13,20 @@ class Net(nn.Module):
             nn.Linear(100, 10),
             nn.Sigmoid()
         )
-        # self.classes = list([torch.random((10,)) for i in range(3)])
         self.memory = nn.ParameterList([nn.Parameter(torch.rand((10,))) for i in range(3)])
-        # self.classes = torch.Tensor([torch.rand((10,)) for i in range(3)])
-        # self.classes = torch.rand((3, 10))
-        #self.classes = [torch.rand(10,) for i in range(3)]
 
-    def forward(self, x):
+    def forward(self, feature):
         print(self.memory[0])
-        x = self.encoder(x)
-        x2 = torch.cosine_similarity(x, self.memory[0], 0).unsqueeze(0)
-        print(f'x: {x}')
+        feature = self.encoder(feature)
+        sim_list = torch.cosine_similarity(feature, self.memory[0], 0).unsqueeze(0)
+        print(f'x: {feature}')
         print(f'c: {self.memory}')
         print(f'Memory Tensors: {[str(t) for t in self.memory]}')
         for i in range(2):
-            x2 = torch.cat((x2, torch.cosine_similarity(x, self.memory[i + 1], 0).unsqueeze(0)))
-            # x2 = torch.cat((x2, torch.nn.functional.mse_loss(x, self.classes[i], 0).unsqueeze(0)), 0)
-        x = x2
-        # x = 1/x2
-        # print(f'f: {torch.nn.functional.mse_loss(x, self.classes[i], 0)}')
-        print(f'x: {x}')
-        x = torch.softmax(x, dim=0)
-        return x
+            sim_list = torch.cat((sim_list, torch.cosine_similarity(feature, self.memory[i + 1], 0).unsqueeze(0)))
+        print(f'x: {sim_list}')
+        output = torch.softmax(sim_list, dim=0)
+        return output
 
 x_train = [0.1, 0.5, 0.9]
 y_train = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
