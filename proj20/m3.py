@@ -14,10 +14,10 @@ class Net(nn.Module):
             nn.Sigmoid()
         )
         # self.classes = list([torch.random((10,)) for i in range(3)])
-        # self.classes = nn.ParameterList([torch.rand((10,)) for i in range(3)])
+        self.classes = nn.ParameterList([torch.rand((10,)) for i in range(3)])
         # self.classes = torch.Tensor([torch.rand((10,)) for i in range(3)])
         # self.classes = torch.rand((3, 10))
-        self.classes = [torch.rand(10,) for i in range(3)]
+        #self.classes = [torch.rand(10,) for i in range(3)]
 
     def forward(self, x):
         print(self.classes[0])
