@@ -18,7 +18,7 @@ class Net(nn.Module):
     def forward(self, x):
         print(self.memory[0])
         feature = self.encoder(x)
-        # Compare input
+        # Compare encoded input with all memory tensors and store the cosine similarity values into a new tensor/list
         sim_list = torch.cosine_similarity(feature, self.memory[0], 0).unsqueeze(0)
         print(f'x: {feature}')
         print(f'c: {self.memory}')
