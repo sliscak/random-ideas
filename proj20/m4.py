@@ -15,16 +15,17 @@ class Net(nn.Module):
         )
         self.memory = nn.ParameterList([nn.Parameter(torch.rand((10,))) for i in range(3)])
 
-    def forward(self, feature):
+    def forward(self, x):
         print(self.memory[0])
-        feature = self.encoder(feature)
+        feature = self.encoder(x)
+        # Compare input
         sim_list = torch.cosine_similarity(feature, self.memory[0], 0).unsqueeze(0)
         print(f'x: {feature}')
         print(f'c: {self.memory}')
         print(f'Memory Tensors: {[str(t) for t in self.memory]}')
         for i in range(2):
             sim_list = torch.cat((sim_list, torch.cosine_similarity(feature, self.memory[i + 1], 0).unsqueeze(0)))
-        print(f'x: {sim_list}')
+        print(f'COS_SIM_LIST: {sim_list}')
         output = torch.softmax(sim_list, dim=0)
         return output
 
