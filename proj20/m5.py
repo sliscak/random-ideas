@@ -6,6 +6,7 @@ from torch import nn
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
+        # random static(non trainable) encoder
         self.encoder = nn.Sequential(
             nn.Linear(1, 100),
             nn.ReLU(),
