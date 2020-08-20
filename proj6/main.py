@@ -3,7 +3,7 @@ from time import sleep
 import torch
 
 adaptnet = AdaptNet()
-optimizer = torch.optim.Adam(params=adaptnet.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(params=adaptnet.parameters(), lr=0.001)
 criterion = torch.nn.MSELoss()
 
 c = 0
