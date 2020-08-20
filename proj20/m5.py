@@ -27,11 +27,16 @@ class Net(nn.Module):
         for i in range(2):
             sim_list = torch.cat((sim_list, torch.cosine_similarity(feature, self.memory[i + 1], 0).unsqueeze(0)))
         print(f'COS_SIM_LIST: {sim_list}')
-        output = torch.softmax(sim_list, dim=0)
+        distribution = torch.softmax(sim_list, dim=0)
+        key = torch.argmax(distribution)
+        val = self.memory[key]
+        output = torch.sum(val)
+        # mask = distribution == torch.max(distribution)
+        # output =
         return output
 
 x_train = [0.1, 0.5, 0.9]
-y_train = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+y_train = [0.33, [0.5], [1]]
 
 net = Net()
 # o = net(torch.Tensor([x_train[0]]))
