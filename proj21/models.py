@@ -1,7 +1,6 @@
 import torch
-import torch.optim as optim
 import torch.nn as nn
-from collections import deque, Counter
+from collections import Counter
 
 class NeuralDictionary(nn.Module):
 
