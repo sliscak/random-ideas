@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 from collections import Counter
 
+# Could be speed up with similarity search, or by learning just the Top highest probability values.
+# 
+
 class NeuralDictionary(nn.Module):
 
     def __init__(self):
