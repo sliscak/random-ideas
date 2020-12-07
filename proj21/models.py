@@ -2,9 +2,10 @@ import torch
 import torch.nn as nn
 from collections import Counter
 
-# Could be speed up with similarity search, or by learning just the Top highest probability keys/values(or both).
-# We could track with which key-value pairs have been learned and use that to tell how surprised the network is to see a particular query.
-#   That could be very useful in Reinforcement Learning(for curiosity) or Classification to detect which class has not been learned.
+# Could be speed up with similarity search, or by learning just the Top highest probability/confidence keys/values(or both).
+# We could track which key-value pairs have been learned(with a list of counters or the Counter object) and use that to tell how surprised the network is to see a particular query.
+#   That could be very useful in Reinforcement Learning(as curiosity value) or Classification to detect which class has not been learned.
+# In Reinforcemenet learning the count of 0 would represent the highest/maximum curiosity value. That would represent a state(or location) that has not been visited.
 
 class NeuralDictionary(nn.Module):
 
