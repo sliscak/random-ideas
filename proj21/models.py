@@ -27,7 +27,7 @@ class NeuralDictionary(nn.Module):
         attention = torch.matmul(self.keys, query)
         attention = torch.softmax(attention, 0)
         out = torch.matmul(attention, self.values)
-        # use a activation function here like sigmoid, but that depends on the task, the output range we need
+        # use a activation function here if you want, like sigmoid, but that depends on the task, the output range we need
         #out = torch.sigmoid(out)
         
         amax = torch.argmax(attention)
