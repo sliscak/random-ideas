@@ -6,6 +6,8 @@ from collections import Counter
 # We could track which key-value pairs have been learned(with a list of counters or the Counter object) and use that to tell how surprised the network is to see a particular query.
 #   That could be very useful in Reinforcement Learning(as curiosity value) or Classification to detect which class has not been learned.
 # In Reinforcemenet learning the count of 0 would represent the highest/maximum curiosity value. That would represent a state(or location) that has not been visited.
+# If the key would represent a Class the count of 0 would suggest that that particular Class has not been learned. 
+# So byt tracking the count of used(or top confidence) key-value pairs while learning we would learn the uncertainty values.
 
 class NeuralDictionary(nn.Module):
 
