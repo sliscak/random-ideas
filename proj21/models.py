@@ -3,12 +3,12 @@ import torch.nn as nn
 from collections import Counter
 
 class NeuralDictionary(nn.Module):
-     # Compares a query againts all keys a produces a confidence/probability value for each key, the confidence/probability is multiplied by the value and summed up.
+     # Compares a query againts all keys a produces a confidence/probability for each key, the confidence/probability is multiplied by the value and summed up.
     
-     # The model could be speed up with similarity search, or by learning just the Top highest probability/confidence keys/values(or both).
-     # We could track which key-value pairs have been learned(with a list of counters or the Counter object) and use that to tell how surprised the network is to see a particular query.
+     # The model could be speed up with similarity search, or by learning just the Top highest probability/confidence keys or values(or both).
+     # We could track which key-value pairs have been learned(with a list of counters or the Counter object) and use that to tell how surprised the network is to see a particular query(or state in Reinforcement Learning).
      #   That could be very useful in Reinforcement Learning(as curiosity value) or Classification to detect which class has not been learned.
-     #   In Reinforcemenet learning the count of 0 would represent the highest/maximum curiosity value. That would represent a state(or location) that has not been visited. An agent guided by curiosity would try to visit and learn that state.
+     #   In Reinforcemenet learning the count of 0 would represent the highest/maximum curiosity/uncertainty value. That would represent a state(or location) that has not been visited. An agent guided by curiosity would try to visit and learn that state.
      #   If the key would represent a Class the count of 0 would suggest that that particular Class has not been learned. 
      #   So byt tracking the count of used(or top confidence) key-value pairs while learning we would learn the uncertainty(or curiosity) values.
      #   Key-value pairs that have not been learned while Trainig the model, that is their attention/confidence value was 0.
