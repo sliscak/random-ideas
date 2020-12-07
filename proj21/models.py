@@ -3,7 +3,8 @@ import torch.nn as nn
 from collections import Counter
 
 # Could be speed up with similarity search, or by learning just the Top highest probability values.
-# 
+# We could track with which key-value pairs have been learned and use that to tell how surprised the network is to see a particular query.
+#   That could be very useful in Reinforcement Learning(for curiosity) or Classification to detect which class has not been learned.
 
 class NeuralDictionary(nn.Module):
 
@@ -15,7 +16,7 @@ class NeuralDictionary(nn.Module):
         # 500 values each of size 4
         self.values = nn.Parameter(torch.randn(500, 4, dtype=torch.double))
 
-        # to later see how many times a key has been chosen as the most important
+        # to track and later see how many times a key has been chosen as the most important one(the key with the highest confidence)
         self.meta = Counter()
 
     def forward(self, query):
