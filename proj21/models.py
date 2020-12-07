@@ -8,6 +8,7 @@ from collections import Counter
 # In Reinforcemenet learning the count of 0 would represent the highest/maximum curiosity value. That would represent a state(or location) that has not been visited.
 # If the key would represent a Class the count of 0 would suggest that that particular Class has not been learned. 
 # So byt tracking the count of used(or top confidence) key-value pairs while learning we would learn the uncertainty(or curiosity) values.
+# Key-value pairs that have not been learned while Trainig the model, that is their attention/confidence value was 0.
 
 class NeuralDictionary(nn.Module):
 
