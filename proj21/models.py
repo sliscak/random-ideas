@@ -17,7 +17,7 @@ class NeuralDictionary(nn.Module):
         # 500 keys each of size 100
         self.keys = nn.Parameter(torch.randn(500, 100, dtype=torch.double))
         
-        # 500 values each of size 4
+        # 500 values each of size 4, the output of the model will be of size 4
         self.values = nn.Parameter(torch.randn(500, 4, dtype=torch.double))
 
         # to track and later see how many times a key has been chosen as the most important one(the key with the highest confidence)
@@ -27,12 +27,12 @@ class NeuralDictionary(nn.Module):
         attention = torch.matmul(self.keys, query)
         attention = torch.softmax(attention, 0)
         out = torch.matmul(attention, self.values)
-        out = torch.sigmoid(out)
+        # use a activation function here like sigmoid, but that depends on the task, the output range we need
+        #out = torch.sigmoid(out)
         
         amax = torch.argmax(attention)
         self.meta.update(f'{amax}')
         #print(self.meta.most_common(10))
       
-        # output is size 4
         return out
     
