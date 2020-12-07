@@ -19,8 +19,7 @@ class NeuralDictionary(nn.Module):
         # 500 values each of size 4
         self.values = nn.Parameter(torch.randn(500, 4, dtype=torch.double))
 
-        # see how many times a key has been chosen/called
-        # self.meta = [0 for x in range(500)]
+        # see how many times a key has been chosen
         self.meta = Counter()
 
     def forward(self, query):
