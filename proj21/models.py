@@ -28,5 +28,6 @@ class NeuralDictionary(nn.Module):
         self.meta.update(f'{amax}')
         #print(self.meta.most_common(10))
       
+        # output is size 4
         return out
     
