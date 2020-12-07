@@ -14,7 +14,7 @@ class NeuralDictionary(nn.Module):
 
     def __init__(self):
         super(Net, self).__init__()
-        # 500 keys each of size 100
+        # 500 keys each of size 100, so the query needs to be of size 100
         self.keys = nn.Parameter(torch.randn(500, 100, dtype=torch.double))
         
         # 500 values each of size 4, the output of the model will be of size 4
