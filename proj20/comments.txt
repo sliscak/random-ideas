@@ -5,5 +5,5 @@ The network/model similariy searches/compares the "x" variable from the "block" 
 the parameter list, this part returns a list/tensor of distance values. The distance values go trough the softmax function,
 so the values are in the range between 0 to 1 inclusive, the network returned this tensor as the final output.
 It was named "unlimited classes for neural networks" because you could add an theoretically unlimited number of classes at
-model initialization time or if tweaked on the fly.
+model initialization time or if tweaked, on the fly.
 The network/model is fully differentiable.
