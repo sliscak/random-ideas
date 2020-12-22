@@ -14,8 +14,7 @@ class Net(nn.Module):
             # print(distance)
             # print(distances)
             distances = torch.cat((distances, torch.unsqueeze(distance, dim=0)), dim=0)
-        print(distances)
-        return x
+        return distances
 
 net = Net(3, 10)
 t = torch.tensor([1,2,3])
