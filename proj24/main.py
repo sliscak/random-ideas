@@ -14,5 +14,5 @@ print(out)
 
 net3 = Net3(3, 10)
 t = torch.tensor([1,2,3])
-out = net2(t.detach())
+out = net3(t.detach())
 print(out)
