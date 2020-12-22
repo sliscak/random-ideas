@@ -43,7 +43,7 @@ class Net3(nn.Module):
             # print(distances)
             distances = torch.cat((distances, torch.unsqueeze(distance, dim=0)), dim=0)
         argmax = torch.argmax(distances, dim=0)
-        mask = torch.zeros(distances.shape[0], dtype=torch.double)
+        mask = torch.zeros(distances.shape[0], dtype=torch.double) # could use "pytorch.sparse" here to maximize efficiency
         mask[argmax] = 1
         out = distances * mask
         return out
