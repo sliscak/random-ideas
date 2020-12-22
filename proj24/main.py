@@ -1,6 +1,5 @@
 import torch
 from models import Net, Net2, Net3
-from torch import nn
 
 net = Net(3, 10)
 t = torch.tensor([1,2,3])
