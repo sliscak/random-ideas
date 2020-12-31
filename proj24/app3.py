@@ -3,7 +3,7 @@
     Here the super pattern represents one image class.
 
     The interesting thing is that the learned super pattern and the image average pattern(made from averaging all images in dataset)
-        look nearly the same. And the averaging operation is faster.
+        look nearly the same. Gradient descent is slow and the averaging operation is faster.
 """
 
 import streamlit as st
