@@ -1,5 +1,9 @@
 """"
-    Learns a single (super) pattern from all images in the dataset.
+    Learns a single (super) pattern from all images in the dataset, (the batch has the size of the whole dataset)
+    Here the super pattern represents one image class.
+
+    The interesting thing is that the learned super pattern and the image average pattern(made from averaging all images in dataset)
+        look nearly the same. And the averaging operation is faster.
 """
 
 import streamlit as st
@@ -35,7 +39,7 @@ def load_img(path: str = "image.png"):
     return img
 
 class ImageDataset(Dataset):
-    def __init__(self, path='', testing=False):
+    def __init__(self, path='', size=None, testing=False):
         self.image_folder_path = path
         self.data = []
 
@@ -51,8 +55,9 @@ class ImageDataset(Dataset):
                     image = ImageOps.grayscale(image)
                     image = np.array(image)/255
                     self.data.append(image)
-                if len(self.data) >= 100:
-                    break
+                if size is not None:
+                    if len(self.data) >= size:
+                        break
                     # break
                     # st.write('WORKING!')
         # if not testing:
@@ -87,7 +92,7 @@ optimizer = optim.AdamW(net.parameters(), lr=0.005)
 criterion = nn.MSELoss()
 
 DATASET_PATH = st.text_input('DATASET PATH', value='C:\\Users\\Admin\\Downloads\\i\\n01514859\\')
-dataset = ImageDataset(path=DATASET_PATH)
+dataset = ImageDataset(path=DATASET_PATH, size=10)
 
 # for image_x, image_y in dataset:
 #     st.image(image_x)
@@ -107,13 +112,16 @@ image_tensors = [torch.rand((30, 30)) for i in range(10)]
 # st_memorized_image.image(out_image, caption='image from memory', width=200)
 last_loss = 0
 plateau = 0
+treshold = 10**-5
+# decimals = 10
 # standstill = 0
 while True:
     loss = torch.tensor([0.0])
+    optimizer.zero_grad()
     for image_x, image_y in dataset:
         st_orig_image.image(image_y, caption='Grount Truth image', width=200)
         image_tensor = torch.tensor(image_y)
-        optimizer.zero_grad()
+        # optimizer.zero_grad()
         out = net(torch.ones(1))
         out_image = out.detach().numpy()
         st_memorized_image.image(out_image, caption='image from memory', width=200)
@@ -121,10 +129,12 @@ while True:
         loss += criterion(out.flatten(), image_tensor.flatten().detach())
         # loss = torch.cosine_similarity(out.flatten(), image_tensor.detach().flatten(),0)
     loss.backward()
-    if loss == last_loss:
+    if torch.abs(loss - last_loss) < treshold:
         plateau += 1
         if plateau >= 3:
-            st_loss.write(f'LOSS: {loss}\tPlateau: {plateau}/{3}')
+            st_loss.write(f'LOSS: {loss.detach()}\t'
+                          f'Plateau: {plateau}/{3}\t'
+                          f'Diff: {torch.abs(loss - last_loss).detach()}/{treshold}')
             st.write('Learning ended.')
             break
     else:
@@ -132,19 +142,32 @@ while True:
         last_loss = loss.detach()
     last_loss = loss
     optimizer.step()
-    st_loss.write(f'LOSS: {loss}\tPlateau: {plateau}/{3}')
+    # st_loss.write(f'LOSS: {loss}\tPlateau: {plateau}/{3}')
+    st_loss.write(f'LOSS: {loss.detach()}\t'
+                  f'Plateau: {plateau}/{3}\t'
+                  f'Diff: {torch.abs(loss - last_loss).detach()}/{treshold}')
     sleep(0.05)
+average = torch.tensor([0])
+for image_x, image_y in dataset:
+    average += image_y
+average /= len(dataset)
 
+dataset = ImageDataset(path=DATASET_PATH, size=200)
 for image_x, image_y in dataset:
     image_tensor = torch.tensor(image_y)
     image = image_tensor.detach().numpy()
     optimizer.zero_grad()
     out = net(torch.ones(1))
     loss = criterion(out.flatten(), image_tensor.flatten().detach())
+    loss2 = criterion(average.flatten(), image_tensor.flatten().detach())
     out_image = out.detach().numpy()
-    col1, col2 = st.beta_columns(2)
+    col1, col2, col3 = st.beta_columns(3)
     col1.image(image, caption='Ground Truth image', width=200)
     col2.image(out_image, caption=f'image from memory| loss: {loss.detach()}', width=200)
+    col3.image(average.detach().numpy(), caption=f'average image| {loss2.detach()}', width=200)
+
+
+
 # while True:
 #     for image_tensor in image_tensors:
 #         out = net(torch.ones(1))
