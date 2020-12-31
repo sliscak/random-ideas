@@ -27,7 +27,7 @@ st_loss = st.empty()
 
 image_tensor = torch.rand((30, 30))
 image = image_tensor.detach().numpy()
-st_orig_image.image(image, caption='input image', width=200)
+st_orig_image.image(image, caption='Ground Truth image', width=200)
 image_tensors = [torch.rand((30, 30)) for i in range(10)]
 # x_inp = torch.ones(1)
 # out = net(x_inp)
