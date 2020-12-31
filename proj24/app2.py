@@ -1,14 +1,73 @@
 import streamlit as st
+import numpy as np
+from PIL import Image, ImageOps
 
 import torch
 from torch import nn
 from torch import optim
 from time import sleep
 
+import streamlit as st
+import numpy as np
+import pandas as pd
+import torch
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+import torch.nn as nn
+import torch.nn.functional as F
+import os
+from PIL import Image
+from time import sleep
+from collections import deque
+
+def load_img(path: str = "image.png"):
+    image = Image.open(path)
+    image = image.resize((128, 128))
+    # image = ImageOps.grayscale(image)
+    # img = np.array(image)
+    # normalize
+    img = np.array(image)# / 255
+    # img = torch.tensor(img)
+    return img
+
+class ImageDataset(Dataset):
+    def __init__(self, path='', testing=False):
+        self.image_folder_path = path
+        self.data = []
+
+        # TODO: Load on the fly
+        for root, dirs, files in os.walk(path, topdown=False):
+            for image_name in files:
+                if '.JPEG' in image_name:
+                    image_path = self.image_folder_path + image_name
+                    image = load_img(image_path)
+                    if len(image.shape) < 3:
+                        continue
+                    image = Image.fromarray(image)
+                    image = ImageOps.grayscale(image)
+                    image = np.array(image)/255
+                    self.data.append(image)
+                    # break
+                    # st.write('WORKING!')
+        if not testing:
+            self.data = self.data[0:10]
+    # def load_images(self, path):
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        image = self.data[idx]
+        x = image
+        y = image
+        sample = x, y
+        return sample
+
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.memory = nn.Parameter(torch.rand((30, 30)))
+        self.memory = nn.Parameter(torch.rand((128, 128)))
 
     def forward(self, x):
         x = self.memory * x
@@ -21,6 +80,13 @@ net = Net()
 optimizer = optim.AdamW(net.parameters(), lr=0.005)
 criterion = nn.MSELoss()
 
+DATASET_PATH = st.text_input('DATASET PATH', value='C:\\Users\\Admin\\Downloads\\i\\n01514859\\')
+dataset = ImageDataset(path=DATASET_PATH)
+
+for image_x, image_y in dataset:
+    st.image(image_x)
+
+st.stop()
 st_orig_image = st.empty()
 st_memorized_image = st.empty()
 st_loss = st.empty()
