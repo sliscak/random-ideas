@@ -1,3 +1,7 @@
+""""
+    Learns a single (super) pattern from all images in the dataset.
+"""
+
 import streamlit as st
 import numpy as np
 from PIL import Image, ImageOps
@@ -47,7 +51,7 @@ class ImageDataset(Dataset):
                     image = ImageOps.grayscale(image)
                     image = np.array(image)/255
                     self.data.append(image)
-                if len(self.data) >= 10:
+                if len(self.data) >= 100:
                     break
                     # break
                     # st.write('WORKING!')
