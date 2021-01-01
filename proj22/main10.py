@@ -25,7 +25,7 @@ class Net(nn.Module):
     def forward(self, img, locations):
         # f_img = torch.flatten(img, 0)
         f_loc = torch.flatten(locations)
-        x = torch.cat((f_img, f_loc))
+        x = torch.cat((img, f_loc))
 
         st.write(x.shape)
         # x = torch.clamp(x, min=0, max=1)

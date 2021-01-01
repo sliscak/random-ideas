@@ -92,7 +92,7 @@ optimizer = optim.AdamW(net.parameters(), lr=0.005)
 criterion = nn.MSELoss()
 
 DATASET_PATH = st.text_input('DATASET PATH', value='C:\\Users\\Admin\\Downloads\\i\\n01514859\\')
-dataset = ImageDataset(path=DATASET_PATH, size=100)
+dataset = ImageDataset(path=DATASET_PATH, size=3)
 
 # for image_x, image_y in dataset:
 #     st.image(image_x)
@@ -112,7 +112,7 @@ image_tensors = [torch.rand((30, 30)) for i in range(10)]
 # st_memorized_image.image(out_image, caption='image from memory', width=200)
 last_loss = 0
 plateau = 0
-treshold = 10**-5
+treshold = 10**-10
 # decimals = 10
 # standstill = 0
 
@@ -127,8 +127,8 @@ while True:
         out_image = out.detach().numpy()
         st_memorized_image.image(out_image, caption='image from memory', width=200)
         # st.write(f'Out: {out}')
-        loss += criterion(out.flatten(), image_tensor.flatten().detach())
-        # loss = torch.cosine_similarity(out.flatten(), image_tensor.detach().flatten(),0)
+        # loss += criterion(out.flatten(), image_tensor.flatten().detach())
+        loss += 1 - torch.cosine_similarity(out.flatten(), image_tensor.detach().flatten(),0)
     loss.backward()
     if torch.abs(loss - last_loss) < treshold:
         plateau += 1
@@ -148,14 +148,15 @@ while True:
                   f'Plateau: {plateau}/{3}\t'
                   f'Diff: {torch.abs(loss - last_loss).detach()}/{treshold}')
     sleep(0.05)
+
 average = torch.tensor([0])
-images = []
+# images = []
 for image_x, image_y in dataset:
     average += image_y
-    images.append(image_y.flatten())
-# average /= len(dataset)
-average = np.median(images, 0)
-average = torch.tensor([average]).reshape(128, 128)
+    # images.append(image_y.flatten())
+average /= len(dataset)
+# average = np.median(images, 0)
+# average = torch.tensor([average]).reshape(128, 128)
 
 dataset = ImageDataset(path=DATASET_PATH, size=10)
 for image_x, image_y in dataset:
@@ -164,12 +165,12 @@ for image_x, image_y in dataset:
     optimizer.zero_grad()
     out = net(torch.ones(1))
     # loss = criterion(out.flatten(), image_tensor.flatten().detach())
-    loss = torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
+    loss = 1 - torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
     # loss2 = criterion(average.flatten(), image_tensor.flatten().detach())
-    loss2 = torch.cosine_similarity(average.flatten(), image_tensor.flatten().detach(), 0)
+    loss2 = 1 - torch.cosine_similarity(average.flatten(), image_tensor.flatten().detach(), 0)
     out_image = out.detach().numpy()
     average_img = average.detach().numpy()
-    diff_img = np.abs(image - average_img)
+    diff_img = np.abs(image - (out_image))
     col1, col2, col3, col4 = st.beta_columns(4)
     col1.image(image, caption='Ground Truth image', width=200)
     col2.image(out_image, caption=f'image from memory| loss: {loss.detach()}', width=200)
@@ -182,12 +183,12 @@ for image_x, image_y in dataset:
     optimizer.zero_grad()
     out = net(torch.ones(1))
     # loss = criterion(out.flatten(), image_tensor.flatten().detach())
-    loss = torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
+    loss = 1 - torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
     # loss2 = criterion(average.flatten(), image_tensor.flatten().detach())
-    loss2 = torch.cosine_similarity(average.flatten(), image_tensor.flatten().detach(), 0)
+    loss2 = 1 - torch.cosine_similarity(average.flatten(), image_tensor.flatten().detach(), 0)
     out_image = out.detach().numpy()
     average_img = average.detach().numpy()
-    diff_img = np.abs(image - average_img)
+    diff_img = np.abs(image - out_image)
     col1, col2, col3, col4 = st.beta_columns(4)
     col1.image(image, caption='Ground Truth image', width=200)
     col2.image(out_image, caption=f'image from memory| loss: {loss.detach()}', width=200)
