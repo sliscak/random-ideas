@@ -152,6 +152,7 @@ class NeuralMem(nn.Module):
         self.kernel = (5, 5)
         self.stride = 1
         self.padding = 10
+        self.patterns = []
 
     def forward(self, image_tensor):
         """"
@@ -182,7 +183,6 @@ class NeuralMem(nn.Module):
         out = out.permute(1, 0)
         out = out.unsqueeze(0)
         st.write(out.shape)
-        print(out.shape)
         out = torch.nn.functional.fold(out,
                                        output_size=self.output_size,
                                        kernel_size=self.kernel,
@@ -195,6 +195,8 @@ class NeuralMem(nn.Module):
         # needs to be of shape CxHxW
         image = image_tensor.unsqueeze(0).unsqueeze(0)
         unfolded = torch.nn.functional.unfold(image, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
+        st.write(unfolded.shape)
+        exit()
         unfolded = unfolded.squeeze(0)
         unfolded = unfolded.permute(1, 0)
         # self.mem.add(unfolded.numpy())
@@ -245,7 +247,7 @@ net = NeuralMem()
 # criterion = nn.MSELoss()
 
 DATASET_PATH = st.text_input('DATASET PATH', value='C:\\Users\\Admin\\Downloads\\i\\n01514859\\')
-dataset = ImageDataset(path=DATASET_PATH, size=10)
+dataset = ImageDataset(path=DATASET_PATH, size=10, image_size=(128, 128))
 
 # for image_x, image_y in dataset:
 #     st.image(image_x)

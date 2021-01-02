@@ -1,3 +1,4 @@
+
 """"
     Learns a single (super) pattern from all images in the dataset, (the batch has the size of the whole dataset)
     Here the super pattern represents one image class.
@@ -147,63 +148,72 @@ class NeuralDict(nn.Module):
 class NeuralMem(nn.Module):
     def __init__(self, image_size=(64, 64)):
         super(NeuralMem, self).__init__()
-        self.mem = faiss.IndexFlatL2(25) # size of one tile/kernel
+        # res = faiss.StandardGpuResources()
+        self.nlist = 100
+        self.quantizer = faiss.IndexFlatL2(225)
+        self.mem = index = faiss.IndexIVFFlat(self.quantizer, 225, self.nlist)
+        # self.mem = faiss.IndexFlatL2(25) # size of one tile/kernel
+        # self.mem = faiss.index_cpu_to_gpu(res, 0, self.mem)
         self.output_size = image_size
-        self.kernel = (5, 5)
+        self.kernel = (15, 15)
         self.stride = 1
         self.padding = 10
+        self.patterns = []
 
     def forward(self, image_tensor):
         """"
             Input is a image tensor
         """
         image = image_tensor.unsqueeze(0).unsqueeze(0)
+        image = torch.nn.functional.interpolate(image, (128, 128))
         unfolded = torch.nn.functional.unfold(image, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
         unfolded = unfolded.squeeze(0)
         unfolded = unfolded.permute(1, 0)
         out = None
         progress_bar = st.progress(0)
-        # st.write(unfolded.shape)
-        # unfolded = unfolded.numpy().astype('float32')
-        # d,k,v = self.mem.search_and_reconstruct(unfolded, 1)
-        # exit()
         for i, pattern in enumerate(unfolded):
-            pattern = pattern.unsqueeze(0).numpy().astype('float32')
-            # st.write(pattern)
-            # d, k = self.mem.search(pattern, 1)
+            pattern = pattern.unsqueeze(0)
+            pattern = pattern.numpy().astype('float32')
             d, k, pattern = self.mem.search_and_reconstruct(pattern, 1)
-            found = torch.tensor(pattern[0][0])
-            # st.write(found)
+            found = torch.tensor(pattern).squeeze(0)
             if out is None:
-                out = found.unsqueeze(0)
+                out = found
+                # out = found.unsqueeze(0)
             else:
-                out = torch.cat((out, found.unsqueeze(0)), 0)
+                out = torch.cat((out, found), 0)
+                # out = torch.cat((out, found.unsqueeze(0)), 0)
             progress_bar.progress(i/unfolded.shape[0])
         out = out.permute(1, 0)
         out = out.unsqueeze(0)
-        st.write(out.shape)
-        print(out.shape)
         out = torch.nn.functional.fold(out,
-                                       output_size=self.output_size,
+                                       output_size=(128, 128),
                                        kernel_size=self.kernel,
                                        stride=self.stride,
                                        padding=self.padding)
         # return out.squeeze(0).squeeze(0)/out.squeeze(0).squeeze(0).max(0)
-        return out.squeeze(0).squeeze(0)/ out.flatten().max()
+        out = torch.nn.functional.interpolate(out, self.output_size)
+        out = out.squeeze(0).squeeze(0)/ out.flatten().max()
+        st.write(f'Out shape: {out.shape}')
+        return out
 
     def add(self, image_tensor):
-        # needs to be of shape CxHxW
+        # needs to be of shape CxHxW or CxWxH?
         image = image_tensor.unsqueeze(0).unsqueeze(0)
         unfolded = torch.nn.functional.unfold(image, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
         unfolded = unfolded.squeeze(0)
         unfolded = unfolded.permute(1, 0)
-        # self.mem.add(unfolded.numpy())
-        # array = unfolded.numpy().astype('float32')
-        # self.mem.add(array)
-        # st.stop()
+        patterns = None
         for pattern in unfolded:
-            pattern = pattern.unsqueeze(0).numpy().astype('float32')
-            self.mem.add(pattern)
+
+            pattern = pattern.unsqueeze(0)
+            pattern = pattern.numpy().astype('float32')
+            if patterns is None:
+                patterns = pattern
+            else:
+                patterns = np.concatenate((patterns, pattern))
+        if not self.mem.is_trained:
+            self.mem.train(patterns)
+        self.mem.add(patterns)
 
 # image_tensor = torch.rand(64,64)
 # st.image(image_tensor.numpy(), width=250)
@@ -240,12 +250,12 @@ class NeuralMem(nn.Module):
 #         self.patterns.append([key, key_class])
 #         self.key_classes.append(key_class)
 
-net = NeuralMem()
+net = NeuralMem(image_size=(64, 64))
 # optimizer = optim.AdamW(net.parameters(), lr=0.005)
 # criterion = nn.MSELoss()
 
 DATASET_PATH = st.text_input('DATASET PATH', value='C:\\Users\\Admin\\Downloads\\i\\n01514859\\')
-dataset = ImageDataset(path=DATASET_PATH, size=10)
+dataset = ImageDataset(path=DATASET_PATH, size=10, image_size=(128, 128))
 
 # for image_x, image_y in dataset:
 #     st.image(image_x)
@@ -271,10 +281,11 @@ for image_x, image_y in dataset:
     image_tensor = torch.tensor(image_y)
     net.add(torch.tensor(image_x))
 
-print(net(torch.tensor(dataset[2][1])))
+# print(net(torch.tensor(dataset[2][1])))
 # exit()
 average = torch.tensor([0])
 # images = []
+dataset = ImageDataset(path=DATASET_PATH, size=10, image_size=(64, 64))
 for image_x, image_y in dataset:
     average += image_y
     # images.append(image_y.flatten())
