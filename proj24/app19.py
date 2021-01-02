@@ -1,12 +1,4 @@
 
-""""
-    Learns a single (super) pattern from all images in the dataset, (the batch has the size of the whole dataset)
-    Here the super pattern represents one image class.
-
-    The interesting thing is that the learned super pattern and the image average pattern(made from averaging all images in dataset)
-        look nearly the same. Gradient descent/Backpropagation is slow and the averaging operation is faster.
-"""
-
 import streamlit as st
 import numpy as np
 from PIL import Image, ImageOps
