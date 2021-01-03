@@ -1,7 +1,7 @@
 """"
-    Fast and Robust StyleTransfer by providing INPUT and OUTPUT example pairs and using similarity search.
+    Fast and Robust StyleTransfer and Colorization by providing INPUT and OUTPUT example pairs and using similarity search.
     TODO: remove duplicate patterns/kernels from faiss index/memory
-    TODO: learn at lower resolution
+    TODO: learn/train at lower resolution
     TODO: rotate and mirror the patterns/kernels and use other augmentations.
 """
 
@@ -179,7 +179,9 @@ class NeuralMem(nn.Module):
 IMAGE_SIZE = (64, 64, 3)
 net = NeuralMem(image_size=IMAGE_SIZE)
 
-header = st.write('## FAST AND ROBUST STYLETRANSFER')
+header1 = st.write('## FAST AND ROBUST STYLETRANSFER AND COLORIZATION by providing input and output example image pairs and similarity search')
+header2 = st.write('### Transfer the style of images by providing input and output example images.')
+header3 = st.write('### Colorize images by providing black-white or grayscale input and colored output example images(like grayscale photo as input example and colored photo as output example for training')
 col1_1, col1_2 = st.beta_columns(2)
 input_ph = st.empty()
 train_int_col, train_out_col= st.beta_columns(2)
