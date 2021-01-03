@@ -3,6 +3,7 @@
     TODO: remove duplicate patterns/kernels from faiss index/memory
     TODO: learn/train at lower resolution
     TODO: rotate and mirror the patterns/kernels and use other augmentations.
+    TODO: increase speed by paralelizing the pattern retrieval(similarity search)
 """
 
 import os
