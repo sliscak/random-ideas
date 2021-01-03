@@ -1,5 +1,7 @@
 """"
     Fast and Robust StyleTransfer
+    TODO: remove duplicate patterns/kernels from faiss index/memory
+    TODO: learn at lower resolution
 """
 
 import os
@@ -158,25 +160,19 @@ class NeuralMem(nn.Module):
         self.mem.add(patterns)
 
 
-IMAGE_SIZE = (512, 512, 3)
+IMAGE_SIZE = (128, 128, 3)
 net = NeuralMem(image_size=IMAGE_SIZE)
 
 col1, col2 = st.beta_columns(2)
 uploaded_file = col1.file_uploader("Choose training image")
 if uploaded_file is not None:
     train_image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
-else:
-    TRAIN_IMAGE_PATH = st.text_input('IMAGE PATH', value='img.jpg')
-    train_image = load_img(TRAIN_IMAGE_PATH, image_size=IMAGE_SIZE[0:2], gray_scale=False)
 
 train_col, input_col, output_col = st.beta_columns(3)
 
 uploaded_file = col2.file_uploader("Choose input image")
 if uploaded_file is not None:
     image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
-else:
-    IMAGE_PATH = st.text_input('IMAGE PATH', value='image.jpg')
-    image = load_img(IMAGE_PATH, image_size=IMAGE_SIZE[0:2], gray_scale=False)
 
 train_col.image(train_image, width=250, caption='training image')
 input_col.image(image, width=250, caption='input image')
