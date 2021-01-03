@@ -99,16 +99,19 @@ class NeuralMem(nn.Module):
     def __init__(self, image_size=(64, 64)):
         super(NeuralMem, self).__init__()
         # res = faiss.StandardGpuResources()
-        self.nlist = 100
-        self.quantizer = faiss.IndexFlatL2(225)
-        self.mem = index = faiss.IndexIVFFlat(self.quantizer, 225, self.nlist)
         # self.mem = faiss.IndexFlatL2(25) # size of one tile/kernel
         # self.mem = faiss.index_cpu_to_gpu(res, 0, self.mem)
         self.output_size = image_size
         self.kernel = (15, 15)
+        self.dimensions = int(np.product(self.kernel))
         self.stride = 1
         self.padding = 10
         self.patterns = []
+
+        self.nlist = 100
+        # self.mem = faiss.IndexFlatL2(self.dimensions)
+        self.quantizer = faiss.IndexFlatL2(self.dimensions)
+        self.mem = index = faiss.IndexIVFFlat(self.quantizer, self.dimensions, self.nlist)
 
     def forward(self, image_tensor):
         """"
@@ -153,55 +156,75 @@ class NeuralMem(nn.Module):
         unfolded = unfolded.squeeze(0)
         unfolded = unfolded.permute(1, 0)
         patterns = None
-        for pattern in unfolded:
-
-            pattern = pattern.unsqueeze(0)
-            pattern = pattern.numpy().astype('float32')
-            if patterns is None:
-                patterns = pattern
-            else:
-                patterns = np.concatenate((patterns, pattern))
+        for i, pattern in enumerate(unfolded):
+            if (i%2) != 0:
+                pattern = pattern.unsqueeze(0)
+                pattern = pattern.numpy().astype('float32')
+                if patterns is None:
+                    patterns = pattern
+                else:
+                    patterns = np.concatenate((patterns, pattern))
         if not self.mem.is_trained:
             self.mem.train(patterns)
         self.mem.add(patterns)
 
 net = NeuralMem(image_size=(64, 64))
 
-DATASET_PATH = st.text_input('DATASET PATH', value='C:\\Users\\Admin\\Downloads\\i\\n01514859\\')
-dataset = ImageDataset(path=DATASET_PATH, size=10, image_size=(128, 128))
+DATASET_PATH = st.text_input('DATASET PATH', value='C:\\Users\\Admin\\Dataset\\tiny-imagenet-200\\test\\images\\')
+dataset = ImageDataset(path=DATASET_PATH, size=5, image_size=(128, 128))
 
 
 st_orig_image = st.empty()
 st_memorized_image = st.empty()
 st_loss = st.empty()
 
-for image_x, image_y in dataset:
-    image_tensor = torch.tensor(image_y)
+st.write(f'TRAINING:')
+training_progress_bar = st.progress(0)
+for i, data in enumerate(dataset):
+    image_x, _ = data
     net.add(torch.tensor(image_x))
+    training_progress_bar.progress(i/(len(dataset)-1))
 
 
 with torch.no_grad():
-    dataset = ImageDataset(path=DATASET_PATH, size=20)
-    for image_x, image_y in dataset:
-        image_tensor = torch.tensor(image_y)
-        image = image_tensor.detach().numpy()
-        out = net(image_tensor)
-        similarity = torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
-        out_image = out.detach().numpy()
-        diff_img = np.abs(image - (out_image))
-        col1, col2, col3 = st.beta_columns(3)
-        col1.image(image, caption='Ground Truth image', width=250)
-        col2.image(out_image, caption=f'image from memory| similarity: {similarity.detach()}', width=250)
-        col3.image(diff_img, caption=f'diff image', width=250)
-    dataset = ImageDataset(path="C:\\Users\\Admin\\Dataset\\tiny-imagenet-200\\test\\images\\", size=10)
-    for image_x, image_y in dataset:
-        image_tensor = torch.tensor(image_y)
-        image = image_tensor.detach().numpy()
-        out = net(image_tensor)
-        similarity = torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
-        out_image = out.detach().numpy()
-        diff_img = np.abs(image - out_image)
-        col1, col2, col3 = st.beta_columns(3)
-        col1.image(image, caption='Ground Truth image', width=250)
-        col2.image(out_image, caption=f'image from memory| similarity: {similarity.detach()}', width=250)
-        col3.image(diff_img, caption=f'diff image', width=250)
+    dataset = ImageDataset(path="C:\\Users\\Admin\\Dataset\\tiny-imagenet-200\\test\\images\\", size=100, image_size=(64, 64))
+    st.write(f'Dataset Loaded, length: {len(dataset)}')
+    for i, data in enumerate(dataset):
+        if i >= 0:
+            image_x, image_y = data
+            image_tensor = torch.tensor(image_y)
+            image = image_tensor.detach().numpy()
+            out = net(image_tensor)
+            similarity = torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
+            out_image = out.detach().numpy()
+            diff_img = np.abs(image - (out_image))
+            col1, col2, col3 = st.beta_columns(3)
+            col1.image(image, caption='Ground Truth image', width=250)
+            col2.image(out_image, caption=f'image from memory| similarity: {similarity.detach()}', width=250)
+            col3.image(diff_img, caption=f'diff image', width=250)
+
+    # dataset = ImageDataset(path=DATASET_PATH, size=20)
+    # for image_x, image_y in dataset:
+    #     image_tensor = torch.tensor(image_y)
+    #     image = image_tensor.detach().numpy()
+    #     out = net(image_tensor)
+    #     similarity = torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
+    #     out_image = out.detach().numpy()
+    #     diff_img = np.abs(image - (out_image))
+    #     col1, col2, col3 = st.beta_columns(3)
+    #     col1.image(image, caption='Ground Truth image', width=250)
+    #     col2.image(out_image, caption=f'image from memory| similarity: {similarity.detach()}', width=250)
+    #     col3.image(diff_img, caption=f'diff image', width=250)
+
+    # dataset = ImageDataset(path="C:\\Users\\Admin\\Dataset\\tiny-imagenet-200\\test\\images\\", size=10)
+    # for image_x, image_y in dataset:
+    #     image_tensor = torch.tensor(image_y)
+    #     image = image_tensor.detach().numpy()
+    #     out = net(image_tensor)
+    #     similarity = torch.cosine_similarity(out.flatten(), image_tensor.flatten().detach(), 0)
+    #     out_image = out.detach().numpy()
+    #     diff_img = np.abs(image - out_image)
+    #     col1, col2, col3 = st.beta_columns(3)
+    #     col1.image(image, caption='Ground Truth image', width=250)
+    #     col2.image(out_image, caption=f'image from memory| similarity: {similarity.detach()}', width=250)
+    #     col3.image(diff_img, caption=f'diff image', width=250)
