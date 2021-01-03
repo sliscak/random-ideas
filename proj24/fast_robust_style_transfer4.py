@@ -1,5 +1,5 @@
 """"
-    Fast and Robust StyleTransfer
+    Fast and Robust StyleTransfer by providing INPUT and OUT example pairs and using similarity search.
     TODO: remove duplicate patterns/kernels from faiss index/memory
     TODO: learn at lower resolution
 """
@@ -95,6 +95,7 @@ class NeuralMem(nn.Module):
         self.dimensions = int(np.product(self.kernel) * self.output_size[2])
         self.stride = 1
         self.padding = 10
+        self.patterns = []
 
         self.nlist = 100
         # self.mem = faiss.IndexFlatL2(self.dimensions)
@@ -117,7 +118,8 @@ class NeuralMem(nn.Module):
             pattern = pattern.unsqueeze(0)
             pattern = pattern.numpy().astype('float32')
             d, k, pattern = self.mem.search_and_reconstruct(pattern, 1)
-            found = torch.tensor(pattern).squeeze(0)
+
+            found = torch.tensor(self.patterns[k[0][0]]).unsqueeze(0)
             if out is None:
                 out = found
             else:
@@ -135,26 +137,39 @@ class NeuralMem(nn.Module):
         st.write(f'Out shape: {out.shape}')
         return out
 
-    def add(self, image):
-        # takes tensor array as input image.
-        # input shape is HxWxC and is changed into CxHxW
-        # st.write(image.shape)
-        image = image.permute(2, 0, 1)
-        image = image.unsqueeze(0)
-        unfolded = torch.nn.functional.unfold(image, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
-        # st.write(unfolded.shape)
-        unfolded = unfolded.squeeze(0)
-        unfolded = unfolded.permute(1, 0)
+    def add(self, input_example, output_example):
+        # takes two tensor arrays as input.
+        # input shape of each example is HxWxC and is changed into CxHxW
+        # both examples need to have the same resolution
+        image1 = input_example.permute(2, 0, 1)
+        image2 = output_example.permute(2, 0, 1)
+
+        image1 = image1.unsqueeze(0)
+        image2 = image2.unsqueeze(0)
+        unfolded1 = torch.nn.functional.unfold(image1, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
+        unfolded2 = torch.nn.functional.unfold(image2, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
+
+        unfolded1 = unfolded1.squeeze(0)
+        unfolded2 = unfolded2.squeeze(0)
+
+        unfolded1 = unfolded1.permute(1, 0)
+        unfolded2 = unfolded2.permute(1, 0)
+
         patterns = None
-        for i, pattern in enumerate(unfolded):
-            # st.write(pattern.shape)
-            # if (i%2) != 0:
-            pattern = pattern.unsqueeze(0)
-            pattern = pattern.numpy().astype('float32')
+        # Make sure the resolution is the same or the loop is gonna get wrong!
+        # TODO: make sure the indexing is correct!
+        for i, pattern1 in enumerate(unfolded1):
+            pattern1 = pattern1.unsqueeze(0)
+            pattern2 = unfolded2[i]
+
+            pattern1 = pattern1.numpy().astype('float32')
+            pattern2 = pattern2.numpy().astype('float32')
+            self.patterns.append(pattern2)
+
             if patterns is None:
-                patterns = pattern
+                patterns = pattern1
             else:
-                patterns = np.concatenate((patterns, pattern))
+                patterns = np.concatenate((patterns, pattern1))
         if not self.mem.is_trained:
             self.mem.train(patterns)
         self.mem.add(patterns)
@@ -163,30 +178,37 @@ class NeuralMem(nn.Module):
 IMAGE_SIZE = (64, 64, 3)
 net = NeuralMem(image_size=IMAGE_SIZE)
 
-col1, col2 = st.beta_columns(2)
-uploaded_file = col1.file_uploader("Choose training image")
-if uploaded_file is not None:
-    train_image = preprocess(uploaded_file, image_size=(128, 128), gray_scale=False)
-    # train_image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
-
-train_col, input_col, output_col = st.beta_columns(3)
-
-uploaded_file = col2.file_uploader("Choose input image")
-if uploaded_file is not None:
-    image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
-
-train_col.image(train_image, width=250, caption='training image')
-input_col.image(image, width=250, caption='input image')
-
-# st.write(f'TRAINING:')
-net.add(torch.tensor(train_image))
-# st.write(f'TRAINED!')
-
-output = net(torch.tensor(image)).numpy()
-output_col.image(output, width=250, caption='output image')
-
+col1_1, col1_2 = st.beta_columns(2)
+input_ph = st.empty()
+train_int_col, train_out_col= st.beta_columns(2)
+input_col, output_col = st.beta_columns(2)
 rand_input_col, rand_output_col = st.beta_columns(2)
-image = torch.rand(IMAGE_SIZE)
-rand_input_col.image(image.numpy(), width=250, caption='random input image')
-output = net(torch.tensor(image)).numpy()
-rand_output_col.image(output, width=250, caption='output image')
+
+
+uploaded_inp_example = col1_1.file_uploader("Choose INPUT EXAMPLE for training")
+uploaded_out_example = col1_2.file_uploader("Choose OUTPUT EXAMPLE for training")
+uploaded_file = input_ph.file_uploader("Choose input image")
+
+if uploaded_inp_example is not None and uploaded_out_example is not None:
+    train_inp_example = preprocess(uploaded_inp_example, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+    train_int_col.image(train_inp_example, caption="INPUT EXAMPLE", width=250)
+    train_inp_example = torch.tensor(train_inp_example)
+
+    train_out_example = preprocess(uploaded_out_example, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+    train_out_col.image(train_out_example, caption="OUTPUT EXAMPLE", width=250)
+    train_out_example = torch.tensor(train_out_example)
+
+    net.add(train_inp_example, train_out_example)
+
+    if uploaded_file is not None:
+        image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+        input_col.image(image, width=250, caption='input image')
+        output = net(torch.tensor(image)).numpy()
+        output_col.image(output, width=250, caption='output image')
+
+
+#
+# image = torch.rand(IMAGE_SIZE)
+# rand_input_col.image(image.numpy(), width=250, caption='random input image')
+# output = net(torch.tensor(image)).numpy()
+# rand_output_col.image(output, width=250, caption='output image')
