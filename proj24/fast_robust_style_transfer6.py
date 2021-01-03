@@ -4,6 +4,7 @@
     TODO: learn/train at lower resolution
     TODO: rotate and mirror the patterns/kernels and use other augmentations.
     TODO: increase speed by parallelizing the pattern retrieval(similarity search)
+
 """
 
 import os
@@ -87,7 +88,7 @@ class ImageDataset(Dataset):
 
 
 class NeuralMem(nn.Module):
-    def __init__(self, image_size=(64, 64)):
+    def __init__(self, image_size=(64, 64), index_pretrain=False):
         super(NeuralMem, self).__init__()
         # res = faiss.StandardGpuResources()
         # self.mem = faiss.IndexFlatL2(25) # size of one tile/kernel
@@ -98,11 +99,15 @@ class NeuralMem(nn.Module):
         self.stride = 1
         self.padding = 10
         self.patterns = []
+        self.index_pretrain = index_pretrain
 
         self.nlist = 100
         # self.mem = faiss.IndexFlatL2(self.dimensions)
-        self.quantizer = faiss.IndexFlatL2(self.dimensions)
-        self.mem = index = faiss.IndexIVFFlat(self.quantizer, self.dimensions, self.nlist)
+        if self.index_pretrain:
+            self.quantizer = faiss.IndexFlatL2(self.dimensions)
+            self.mem = faiss.IndexIVFFlat(self.quantizer, self.dimensions, self.nlist)
+        else:
+            self.mem = faiss.IndexFlatL2(self.dimensions)
 
     def forward(self, image):
         """"
