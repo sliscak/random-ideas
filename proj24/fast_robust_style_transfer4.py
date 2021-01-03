@@ -1,5 +1,5 @@
 """"
-    Fast and Robust StyleTransfer by providing INPUT and OUT example pairs and using similarity search.
+    Fast and Robust StyleTransfer by providing INPUT and OUTPUT example pairs and using similarity search.
     TODO: remove duplicate patterns/kernels from faiss index/memory
     TODO: learn at lower resolution
 """
