@@ -2,6 +2,7 @@
     Fast and Robust StyleTransfer by providing INPUT and OUTPUT example pairs and using similarity search.
     TODO: remove duplicate patterns/kernels from faiss index/memory
     TODO: learn at lower resolution
+    TODO: rotate and mirror the patterns/kernels and use other augmentations.
 """
 
 import os
@@ -178,6 +179,7 @@ class NeuralMem(nn.Module):
 IMAGE_SIZE = (64, 64, 3)
 net = NeuralMem(image_size=IMAGE_SIZE)
 
+header = st.write('## FAST AND ROBUST STYLETRANSFER')
 col1_1, col1_2 = st.beta_columns(2)
 input_ph = st.empty()
 train_int_col, train_out_col= st.beta_columns(2)
