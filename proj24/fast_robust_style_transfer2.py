@@ -1,30 +1,38 @@
-
 """"
-    Fast StyleTransfer
+    Fast and Robust StyleTransfer
 """
 
-import streamlit as st
-import numpy as np
-from PIL import Image, ImageOps
+import os
 
-import torch
-from torch import nn
-from torch import optim
-from time import sleep
-
-import streamlit as st
+import faiss
 import numpy as np
-import pandas as pd
+import streamlit as st
 import torch
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
-import os
 from PIL import Image
-from time import sleep
-from collections import deque
-import faiss
+from PIL import ImageOps
+from torch.utils.data import Dataset
+
+
+def preprocess(bytes_image, image_size=(64, 64), gray_scale=False):
+    """"
+        Resizes the image and returns it as numpy array.
+    """
+    image = Image.open(bytes_image)
+    image = image.resize(image_size)
+    if gray_scale:
+        image = ImageOps.grayscale(image)
+        # normalize
+        image = np.array(image) / 255
+        image = np.expand_dims(image, axis=2)
+    else:
+        # normalize
+        image = np.array(image) / 255
+        if len(image.shape) < 3:
+            return None
+    return image
+
 
 def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False):
     """"
@@ -43,6 +51,7 @@ def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False):
         if len(image.shape) < 3:
             return None
     return image
+
 
 class ImageDataset(Dataset):
     def __init__(self, path='', image_size=(64, 64), size=None, testing=False):
@@ -80,7 +89,7 @@ class NeuralMem(nn.Module):
         # self.mem = faiss.IndexFlatL2(25) # size of one tile/kernel
         # self.mem = faiss.index_cpu_to_gpu(res, 0, self.mem)
         self.output_size = image_size
-        self.kernel = (5, 5)
+        self.kernel = (3, 3)
         self.dimensions = int(np.product(self.kernel) * self.output_size[2])
         self.stride = 1
         self.padding = 10
@@ -113,7 +122,7 @@ class NeuralMem(nn.Module):
             else:
                 out = torch.cat((out, found), 0)
                 # out = torch.cat((out, found.unsqueeze(0)), 0)
-            progress_bar.progress(i/unfolded.shape[0])
+            progress_bar.progress(i / unfolded.shape[0])
         out = out.permute(1, 0)
         out = out.unsqueeze(0)
         out = torch.nn.functional.fold(out,
@@ -124,18 +133,18 @@ class NeuralMem(nn.Module):
         # return out.squeeze(0).squeeze(0)/out.squeeze(0).squeeze(0).max(0)
         # out = torch.nn.functional.interpolate(out, self.output_size)
         out = out.squeeze(0).squeeze(0) / out.flatten().max()
-        out = out.permute(1,2,0)
+        out = out.permute(1, 2, 0)
         st.write(f'Out shape: {out.shape}')
         return out
 
     def add(self, image):
         # takes tensor array as input image.
         # input shape is HxWxC and is changed into CxHxW
-        st.write(image.shape)
+        # st.write(image.shape)
         image = image.permute(2, 0, 1)
         image = image.unsqueeze(0)
         unfolded = torch.nn.functional.unfold(image, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
-        st.write(unfolded.shape)
+        # st.write(unfolded.shape)
         unfolded = unfolded.squeeze(0)
         unfolded = unfolded.permute(1, 0)
         patterns = None
@@ -152,24 +161,39 @@ class NeuralMem(nn.Module):
             self.mem.train(patterns)
         self.mem.add(patterns)
 
-# IMAGE_SIZE
-net = NeuralMem(image_size=(64, 64, 3))
 
-TRAIN_IMAGE_PATH = st.text_input('IMAGE PATH', value='img.jpg')
-train_image = load_img(TRAIN_IMAGE_PATH, image_size=(64, 64), gray_scale=False)
+IMAGE_SIZE = (128, 128, 3)
+net = NeuralMem(image_size=IMAGE_SIZE)
 
-st.image(train_image, width=250, caption='training image')
+col1, col2 = st.beta_columns(2)
+uploaded_file = col1.file_uploader("Choose training image")
+if uploaded_file is not None:
+    train_image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+else:
+    TRAIN_IMAGE_PATH = st.text_input('IMAGE PATH', value='img.jpg')
+    train_image = load_img(TRAIN_IMAGE_PATH, image_size=IMAGE_SIZE[0:2], gray_scale=False)
 
-st_orig_image = st.empty()
-st_memorized_image = st.empty()
-st_loss = st.empty()
+train_col, input_col, output_col = st.beta_columns(3)
 
-st.write(f'TRAINING:')
+uploaded_file = col2.file_uploader("Choose input image")
+if uploaded_file is not None:
+    image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+else:
+    IMAGE_PATH = st.text_input('IMAGE PATH', value='image.jpg')
+    image = load_img(IMAGE_PATH, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+
+train_col.image(train_image, width=250, caption='training image')
+input_col.image(image, width=250, caption='input image')
+
+# st.write(f'TRAINING:')
 net.add(torch.tensor(train_image))
-st.write(f'TRAINED!')
+# st.write(f'TRAINED!')
 
-IMAGE_PATH = st.text_input('IMAGE PATH', value='IMAGE.jpg')
-image = load_img(IMAGE_PATH, image_size=(64, 64), gray_scale=False)
-st.image(image, width=250, caption='input image')
 output = net(torch.tensor(image)).numpy()
-st.image(output, width=250, caption='output image')
+output_col.image(output, width=250, caption='output image')
+
+rand_input_col, rand_output_col = st.beta_columns(2)
+image = torch.rand(128, 128, 3)
+rand_input_col.image(image.numpy(), width=250, caption='random input image')
+output = net(torch.tensor(image)).numpy()
+rand_output_col.image(output, width=250, caption='output image')
