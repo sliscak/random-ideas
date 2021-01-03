@@ -179,9 +179,10 @@ class NeuralMem(nn.Module):
 IMAGE_SIZE = (128, 128, 3)
 net = NeuralMem(image_size=IMAGE_SIZE)
 
-header1 = st.write('## FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION by providing input and output example image pairs and by using similarity search')
-header2 = st.write('### Transfer the style of images by providing input and output example images.')
-header3 = st.write('### Colorize images by providing black-white or grayscale input and colored output example images(like grayscale photo as input example and colored photo as output example for training)')
+header1 = st.write('## FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION')
+header2 = st.write('## by providing input and output example image pairs and by using similarity search')
+header3 = st.write('### Transfer the style of images by providing input and output example images.')
+header4 = st.write('### Colorize images by providing black-white or grayscale input and colored output example images(like grayscale photo as input example and colored photo as output example for training)')
 col1_1, col1_2 = st.beta_columns(2)
 input_ph = st.empty()
 train_int_col, train_out_col= st.beta_columns(2)
