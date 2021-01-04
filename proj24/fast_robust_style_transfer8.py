@@ -220,9 +220,9 @@ with st.beta_expander("FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION", ex
     header3 = st.markdown('##### Transfer the style of images by providing input and output example images.')
     header4 = st.markdown('##### Colorize images by providing black-white or grayscale input and colored output example images(like grayscale photo as input example and colored photo as output example for training)')
 
-video_file = open('tutorial.webm', 'rb')
-video_bytes = video_file.read()
-st.video(video_bytes)
+# video_file = open('tutorial.webm', 'rb')
+# video_bytes = video_file.read()
+# st.video(video_bytes)
 
 
 col1_1, col1_2 = st.beta_columns(2)
