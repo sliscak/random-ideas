@@ -2,7 +2,7 @@
     Fast and Robust Image StyleTransfer and Colorization by providing INPUT and OUTPUT example pairs and using similarity search.
     TODO: remove duplicate patterns/kernels from faiss index/memory
     TODO: learn/train at lower resolution
-    TODO: rotate and mirror the patterns/kernels and use other augmentations.
+    TODO: rotate and mirror the patterns/kernels and use other transformations and augmentations.
     TODO: increase speed by parallelizing the pattern retrieval(similarity search)
     TODO: add a small cache for recently found(retrieved) patterns.
 
