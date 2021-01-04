@@ -4,7 +4,7 @@
     TODO: learn/train at lower resolution
     TODO: rotate and mirror the patterns/kernels and use other augmentations.
     TODO: increase speed by parallelizing the pattern retrieval(similarity search)
-    TODO: add a small cache for recetly found patterns.
+    TODO: add a small cache for recently found patterns.
 
 """
 
