@@ -88,13 +88,13 @@ class ImageDataset(Dataset):
 
 
 class NeuralMem(nn.Module):
-    def __init__(self, image_size=(64, 64), index_pretrain=False):
+    def __init__(self, image_size=(64, 64), index_pretrain=False, kernel_size=(32, 32)):
         super(NeuralMem, self).__init__()
         # res = faiss.StandardGpuResources()
         # self.mem = faiss.IndexFlatL2(25) # size of one tile/kernel
         # self.mem = faiss.index_cpu_to_gpu(res, 0, self.mem)
         self.output_size = image_size
-        self.kernel = (32, 32)
+        self.kernel = kernel_size
         self.dimensions = int(np.product(self.kernel) * self.output_size[2])
         self.stride = 1
         self.padding = 10
@@ -121,17 +121,18 @@ class NeuralMem(nn.Module):
         unfolded = unfolded.permute(1, 0)
         out = None
         progress_bar = st.progress(0)
-        for i, pattern in enumerate(unfolded):
-            pattern = pattern.unsqueeze(0)
-            pattern = pattern.numpy().astype('float32')
-            d, k, pattern = self.mem.search_and_reconstruct(pattern, 1)
+        with st.spinner('INFERENCE in progres...'):
+            for i, pattern in enumerate(unfolded):
+                pattern = pattern.unsqueeze(0)
+                pattern = pattern.numpy().astype('float32')
+                d, k, pattern = self.mem.search_and_reconstruct(pattern, 1)
 
-            found = torch.tensor(self.patterns[k[0][0]]).unsqueeze(0)
-            if out is None:
-                out = found
-            else:
-                out = torch.cat((out, found), 0)
-            progress_bar.progress(i / (unfolded.shape[0] - 1))
+                found = torch.tensor(self.patterns[k[0][0]]).unsqueeze(0)
+                if out is None:
+                    out = found
+                else:
+                    out = torch.cat((out, found), 0)
+                progress_bar.progress(i / (unfolded.shape[0] - 1))
         out = out.permute(1, 0)
         out = out.unsqueeze(0)
         out = torch.nn.functional.fold(out,
@@ -163,52 +164,55 @@ class NeuralMem(nn.Module):
         unfolded2 = unfolded2.permute(1, 0)
 
         if self.index_pretrain:
-            patterns = None
-            # Make sure the resolution is the same or the loop is gonna get wrong!
-            # TODO: make sure the indexing is correct!
-            for i, pattern1 in enumerate(unfolded1):
-                pattern1 = pattern1.unsqueeze(0)
-                pattern2 = unfolded2[i]
+            with st.spinner('TRAINING in progress...'):
+                patterns = None
+                # Make sure the resolution is the same or the loop is gonna get wrong!
+                # TODO: make sure the indexing is correct!
+                for i, pattern1 in enumerate(unfolded1):
+                    pattern1 = pattern1.unsqueeze(0)
+                    pattern2 = unfolded2[i]
 
-                pattern1 = pattern1.numpy().astype('float32')
-                pattern2 = pattern2.numpy().astype('float32')
-                self.patterns.append(pattern2)
+                    pattern1 = pattern1.numpy().astype('float32')
+                    pattern2 = pattern2.numpy().astype('float32')
+                    self.patterns.append(pattern2)
 
-                if patterns is None:
-                    patterns = pattern1
-                else:
-                    patterns = np.concatenate((patterns, pattern1))
-            if not self.mem.is_trained:
-                self.mem.train(patterns)
-            self.mem.add(patterns)
+                    if patterns is None:
+                        patterns = pattern1
+                    else:
+                        patterns = np.concatenate((patterns, pattern1))
+                if not self.mem.is_trained:
+                    self.mem.train(patterns)
+                self.mem.add(patterns)
         else:
-            # Make sure the resolution is the same or the loop is gonna get wrong!
-            # TODO: make sure the indexing is correct!
-            train_progress_bar = st.progress(0)
-            for i, pattern1 in enumerate(unfolded1):
-                pattern1 = pattern1.unsqueeze(0)
-                pattern2 = unfolded2[i]
+            with st.spinner('TRAINING in progres...'):
+                # Make sure the resolution is the same or the loop is gonna get wrong!
+                # TODO: make sure the indexing is correct!
+                train_progress_bar = st.progress(0)
+                for i, pattern1 in enumerate(unfolded1):
+                    pattern1 = pattern1.unsqueeze(0)
+                    pattern2 = unfolded2[i]
 
-                pattern1 = pattern1.numpy().astype('float32')
-                pattern2 = pattern2.numpy().astype('float32')
+                    pattern1 = pattern1.numpy().astype('float32')
+                    pattern2 = pattern2.numpy().astype('float32')
 
-                self.mem.add(pattern1)
-                self.patterns.append(pattern2)
-                train_progress_bar.progress(i / (len(unfolded1) - 1))
+                    self.mem.add(pattern1)
+                    self.patterns.append(pattern2)
+                    train_progress_bar.progress(i / (len(unfolded1) - 1))
 
 
-IMAGE_SIZE = (128, 128, 3)
+image_sizes = [(2**x, 2**x, 3) for x in range(5,8)]
+IMAGE_SIZE = st.sidebar.selectbox(
+    'Choose image size', options=image_sizes, index=1)
+# IMAGE_SIZE = (128, 128, 3)
 add_selectbox = st.sidebar.selectbox(
     "Use index pretrain?",
     ("YES", "NO")
 )
-kernel_sizes = [(x,x) for x in range(2, 32)]
-add_kernel_selectbox = st.selectbox(
-    'Choose kernel size', kernel_sizes)
-st.write('You selected:', add_kernel_selectbox)
-# number = st.sidebar.number_input('Insert a number')
-index_pretrain = True if add_selectbox == "YES" else False
-net = NeuralMem(image_size=IMAGE_SIZE, index_pretrain=False)
+kernel_sizes = [(x,x) for x in range(1, 33)]
+KERNEL_SIZE = st.sidebar.selectbox(
+    'Choose kernel size', options=kernel_sizes, index=4)
+INDEX_PRETRAIN = True if add_selectbox == "YES" else False
+net = NeuralMem(image_size=IMAGE_SIZE, index_pretrain=INDEX_PRETRAIN, kernel_size=KERNEL_SIZE)
 
 header1 = st.write('## FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION')
 header2 = st.write('## by providing input and output example image pairs and by using similarity search')
