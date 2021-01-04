@@ -100,7 +100,7 @@ class NeuralMem(nn.Module):
         self.dimensions = int(np.product(self.kernel) * self.output_size[2])
         self.stride = 1
         self.padding = 10
-        self.patterns = {}
+        self.pattern_mappings = {}
         self.index_pretrain = index_pretrain
 
         self.nlist = 100
@@ -132,7 +132,7 @@ class NeuralMem(nn.Module):
                 pattern = pattern.numpy().astype('float32')
                 d, k, pattern = self.mem.search_and_reconstruct(pattern, 1)
 
-                counter = self.patterns[k[0][0]]
+                counter = self.pattern_mappings[k[0][0]]
                 pattern_idx = counter.most_common(1)[0][0]
                 reconstructed = self.mem2.reconstruct(pattern_idx)
                 found = torch.tensor(reconstructed).unsqueeze(0)
@@ -182,7 +182,7 @@ class NeuralMem(nn.Module):
 
                     pattern1 = pattern1.numpy().astype('float32')
                     pattern2 = pattern2.numpy().astype('float32')
-                    self.patterns.append(pattern2)
+                    self.pattern_mappings.append(pattern2)
 
                     if patterns is None:
                         patterns = pattern1
@@ -225,12 +225,12 @@ class NeuralMem(nn.Module):
                     self.mem2.add(pattern2)
                     k2 = self.mem.ntotal - 1
 
-                    mappings = self.patterns.get(k1)
+                    mappings = self.pattern_mappings.get(k1)
                     if mappings is None:
                         mappings = Counter([k2])
-                        self.patterns[k1] = mappings
+                        self.pattern_mappings[k1] = mappings
                     else:
-                        self.patterns[k1].update([k2])
+                        self.pattern_mappings[k1].update([k2])
                         # mappings.update([k2])
                     train_progress_bar.progress(i / (len(unfolded1) - 1))
                 st.success(f'LEARNED: {self.mem.ntotal}\tpatterns!')
