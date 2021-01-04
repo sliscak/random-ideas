@@ -109,11 +109,10 @@ class NeuralMem(nn.Module):
             self.quantizer = faiss.IndexFlatL2(self.dimensions)
             self.mem = faiss.IndexIVFFlat(self.quantizer, self.dimensions, self.nlist)
 
-            self.quantizer2 = faiss.IndexFlatL2(self.dimensions)
-            self.mem2 = faiss.IndexIVFFlat(self.quantizer2, self.dimensions, self.nlist)
         else:
             self.mem = faiss.IndexFlatL2(self.dimensions)
-            self.mem2 = faiss.IndexFlatL2(self.dimensions)
+
+        self.mem2 = faiss.IndexFlatL2(self.dimensions)
 
 
     def forward(self, image):
@@ -135,7 +134,7 @@ class NeuralMem(nn.Module):
                 d, k, pattern = self.mem.search_and_reconstruct(pattern, 1)
 
                 counter = self.pattern_mappings[k[0][0]]
-                pattern_idx = int(counter.most_common(1)[0][0])
+                pattern_idx = counter.most_common(1)[0][0] # use int() function?
                 reconstructed = self.mem2.reconstruct(pattern_idx)
                 found = torch.tensor(reconstructed).unsqueeze(0)
                 if out is None:
@@ -207,8 +206,6 @@ class NeuralMem(nn.Module):
 
                 if not self.mem.is_trained:
                     self.mem.train(patterns1)
-                if not self.mem2.is_trained:
-                    self.mem2.train(patterns2)
 
                 self.mem.add(patterns1)
                 self.mem2.add(patterns2)
