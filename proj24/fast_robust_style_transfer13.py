@@ -175,6 +175,7 @@ class NeuralMem(nn.Module):
 
         with st.spinner('TRAINING in progress...'):
             if self.index_pretrain:
+                # TODO: remove duplicate patterns in this code path | index pretrain
                 patterns1 = None
                 patterns2 = None
                 # Make sure the resolution is the same or the loop is gonna get wrong!
@@ -196,6 +197,12 @@ class NeuralMem(nn.Module):
                         patterns1 = pattern2
                     else:
                         patterns2 = np.concatenate((patterns2, pattern2))
+
+                    mappings = self.pattern_mappings.get(i)
+                    if mappings is None:
+                        self.pattern_mappings[i] = Counter([i])
+                    else:
+                        self.pattern_mappings[i].update([i])
 
                 if not self.mem.is_trained:
                     self.mem.train(patterns1)
