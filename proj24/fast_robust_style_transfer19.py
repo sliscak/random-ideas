@@ -1,8 +1,4 @@
 """"
-    This one is not working correctly!!!!!
-"""
-
-""""
     Fast and Robust Image StyleTransfer and Colorization by providing INPUT and OUTPUT example pairs and using similarity search.
     DONE: remove/skip duplicate patterns/kernels from faiss index/memory
     TODO: learn/train at lower resolution
@@ -20,6 +16,7 @@ import streamlit as st
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from time import time
 from collections import Counter
 from PIL import Image
 from PIL import ImageOps
@@ -178,77 +175,48 @@ class NeuralMem(nn.Module):
         unfolded2 = unfolded2.permute(1, 0)
 
         with st.spinner('TRAINING in progress...'):
-            from time import time
+            unfolded1 = unfolded1.contiguous().numpy().astype('float32')
+            unfolded2 = unfolded2.contiguous().numpy().astype('float32')
             if self.index_pretrain:
-                t0 = time()
-                # if not self.mem.is_trained:
-                #     self.mem.train(unfolded1.contiguous().numpy().astype('float32'))
-                # TODO: remove duplicate patterns in this code path | index pretrain
-                patterns1 = None
-                patterns2 = None
-                # Make sure the resolution is the same or the loop is gonna get wrong!
-                # TODO: make sure the indexing is correct!
-                unfolded1 = unfolded1.contiguous().numpy().astype('float32')
-                unfolded2 = unfolded2.contiguous().numpy().astype('float32')
                 if not self.mem.is_trained:
                     self.mem.train(unfolded1)
-                # if not self.mem2.is_trained:
-                #     self.mem2.train(unfolded2)
+            # Make sure the resolution is the same or the loop is gonna get wrong!
+            # Maybe use numpy.split() method on unfolded1
+            # TODO: make sure the indexing is correct!
+            train_progress_bar = st.progress(0)
+            for i, pattern1 in enumerate(unfolded1):
+                pattern1 = pattern1.reshape(1, -1)
+                pattern2 = unfolded2[i].reshape(1, -1)
+                # pattern1 = pattern1.unsqueeze(0)
+                # pattern2 = unfolded2[i].unsqueeze(0)
 
-                self.mem.add(unfolded1)
-                self.mem2.add(unfolded2)
-                for i, pattern1 in enumerate(unfolded1):
-                    mappings = self.pattern_mappings.get(i)
-                    if mappings is None:
-                        self.pattern_mappings[i] = Counter([i])
-                    else:
-                        self.pattern_mappings[i].update([i])
-                #
-                # if not self.mem.is_trained:
-                #     self.mem.train(patterns1)
-                #
-                # self.mem.add(patterns1)
-                # self.mem2.add(patterns2)
-                t1 = time()
-                diff = t1 - t0
-                st.write(f'TIME: {diff}')
-            else:
-                # Make sure the resolution is the same or the loop is gonna get wrong!
-                # TODO: make sure the indexing is correct!
-                train_progress_bar = st.progress(0)
-                for i, pattern1 in enumerate(unfolded1):
-                    pattern1 = pattern1.unsqueeze(0)
-                    pattern2 = unfolded2[i].unsqueeze(0)
+                # pattern1 = pattern1.numpy().astype('float32')
+                # pattern2 = pattern2.numpy().astype('float32')
 
-                    pattern1 = pattern1.numpy().astype('float32')
-                    pattern2 = pattern2.numpy().astype('float32')
+                d1, k1 = self.mem.search(pattern1, 1)
+                d2, k2 = self.mem2.search(pattern2, 1)
 
-                    # counter.update([int(k[0][0])])
-                    # st.write(k[0])
-                    d1, k1 = self.mem.search(pattern1, 1)
-                    d2, k2 = self.mem2.search(pattern2, 1)
+                k1 = int(k1[0][0])
+                k2 = int(k2[0][0])
 
-                    k1 = int(k1[0][0])
-                    k2 = int(k2[0][0])
+                # if the pattern1 is not in self.mem add it.
+                if d1[0][0] > 0:
+                    self.mem.add(pattern1)
+                    k1 = self.mem.ntotal - 1
+                    # if the pattern2 is not in self.mem2 add it.
+                if d2[0][0] > 0:
+                    self.mem2.add(pattern2)
+                    k2 = self.mem2.ntotal - 1
 
-                    # if the pattern1 is not in self.mem add it.
-                    if d1[0][0] > 0:
-                        self.mem.add(pattern1)
-                        k1 = self.mem.ntotal - 1
-                        # if the pattern2 is not in self.mem2 add it.
-                    if d2[0][0] > 0:
-                        self.mem2.add(pattern2)
-                        k2 = self.mem.ntotal - 1
-
-                    mappings = self.pattern_mappings.get(k1)
-                    if mappings is None:
-                        mappings = Counter([k2])
-                        self.pattern_mappings[k1] = mappings
-                    else:
-                        self.pattern_mappings[k1].update([k2])
-                        # mappings.update([k2])
-                    train_progress_bar.progress(i / (len(unfolded1) - 1))
-                st.success(f'LEARNED: {self.mem.ntotal}\tpatterns!')
+                mappings = self.pattern_mappings.get(k1)
+                if mappings is None:
+                    mappings = Counter([k2])
+                    self.pattern_mappings[k1] = mappings
+                else:
+                    self.pattern_mappings[k1].update([k2])
+                    # mappings.update([k2])
+                train_progress_bar.progress(i / (len(unfolded1) - 1))
+            st.success(f'LEARNED: {self.mem.ntotal}\tpatterns!')
 
 
 image_sizes = [(2**x, 2**x, 3) for x in range(5,8)]
