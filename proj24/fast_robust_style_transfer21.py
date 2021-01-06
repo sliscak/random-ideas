@@ -42,23 +42,35 @@ def preprocess(bytes_image, image_size=(64, 64), gray_scale=False):
     return image
 
 
-def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False):
+def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False, return_pair=False):
     """"
         Loads an image, resizes it and returns it as numpy array.
+        Options include: output image as grayscale and output grayscale and colored image pair
     """
     image = Image.open(path)
     image = image.resize(image_size)
-    if gray_scale:
-        image = ImageOps.grayscale(image)
-        # normalize
-        image = np.array(image) / 255
-        image = np.expand_dims(image, axis=2)
-    else:
-        # normalize
+    if return_pair:
+        gray_image = ImageOps.grayscale(image)
+        gray_image = np.array(gray_image) / 255
+        gray_image = np.expand_dims(gray_image, axis=2)
+
         image = np.array(image) / 255
         if len(image.shape) < 3:
             return None
-    return image
+        else:
+            return (gray_image, image)
+    else:
+        if gray_scale:
+            image = ImageOps.grayscale(image)
+            # normalize
+            image = np.array(image) / 255
+            image = np.expand_dims(image, axis=2)
+        else:
+            # normalize
+            image = np.array(image) / 255
+            if len(image.shape) < 3:
+                return None
+        return image
 
 
 class ImageDataset(Dataset):
@@ -71,10 +83,12 @@ class ImageDataset(Dataset):
             for image_name in files:
                 if '.JPEG' in image_name:
                     image_path = self.image_folder_path + image_name
-                    image = load_img(image_path, image_size=image_size)
-                    if image is None:
+                    pair = load_img(image_path, image_size=image_size, return_pair=True)
+                    if pair is None:
                         continue
-                    self.data.append(image)
+                    else:
+                        gray_image, image = pair
+                    self.data.append((gray_image, image))
                 if size is not None:
                     if len(self.data) >= size:
                         break
@@ -83,9 +97,9 @@ class ImageDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        image = self.data[idx]
+        image, gray_image = self.data[idx]
         x = image
-        y = image
+        y = gray_image
         sample = x, y
         return sample
 
@@ -121,7 +135,9 @@ class NeuralMem(nn.Module):
         """"
             Input is a image tensor
         """
-        st.write(image.shape)
+        output_size = image.shape
+
+        # st.write(image.shape)
         image = image.permute(2, 0, 1)
         image = image.unsqueeze(0)
         unfolded = torch.nn.functional.unfold(image, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
@@ -147,19 +163,20 @@ class NeuralMem(nn.Module):
         out = out.permute(1, 0)
         out = out.unsqueeze(0)
         out = torch.nn.functional.fold(out,
-                                       output_size=self.output_size[0:2],
+                                       output_size=output_size[0:2],
                                        kernel_size=self.kernel,
                                        stride=self.stride,
                                        padding=self.padding)
         out = out.squeeze(0).squeeze(0) / out.flatten().max()
         out = out.permute(1, 2, 0)
-        st.write(f'Out shape: {out.shape}')
+        # st.write(f'Out shape: {out.shape}')
         return out
 
     def add(self, input_example, output_example):
         # takes two tensor arrays as input.
         # input shape of each example is HxWxC and is changed into CxHxW
         # both examples need to have the same resolution
+        t0 = time()
         image1 = input_example.permute(2, 0, 1)
         image2 = output_example.permute(2, 0, 1)
 
@@ -216,23 +233,25 @@ class NeuralMem(nn.Module):
                     self.pattern_mappings[k1].update([k2])
                     # mappings.update([k2])
                 train_progress_bar.progress(i / (len(unfolded1) - 1))
-            st.success(f'LEARNED: {self.mem.ntotal}\tpatterns!')
+            st.success(f'LEARNED: {self.mem.ntotal}\tpatterns in {time() -  t0} seconds!')
 
 
 image_sizes = [(2**x, 2**x, 3) for x in range(5, 10)]
-IMAGE_SIZE = st.sidebar.selectbox(
-    'Choose image size', options=image_sizes, index=1)
+TRAINING_IMAGE_SIZE = st.sidebar.selectbox(
+    'Choose TRAINING image size', options=image_sizes, index=1)
+OUTPUT_IMAGE_SIZE = st.sidebar.selectbox(
+    'Choose OUTPUT image size', options=image_sizes, index=1)
 # IMAGE_SIZE = (64, 64, 3)
 # IMAGE_SIZE = (128, 128, 3)
 add_selectbox = st.sidebar.selectbox(
     "Use index pretrain?",
-    ("YES", "NO"), index=1
+    ("YES", "NO"), index=0
 )
 kernel_sizes = [(x,x) for x in range(1, 33)]
 KERNEL_SIZE = st.sidebar.selectbox(
     'Choose kernel size', options=kernel_sizes, index=4)
 INDEX_PRETRAIN = True if add_selectbox == "YES" else False
-net = NeuralMem(image_size=IMAGE_SIZE, index_pretrain=INDEX_PRETRAIN, kernel_size=KERNEL_SIZE)
+net = NeuralMem(image_size=TRAINING_IMAGE_SIZE, index_pretrain=INDEX_PRETRAIN, kernel_size=KERNEL_SIZE)
 
 with st.beta_expander("FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION", expanded=True):
     # header1 = st.write('## FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION')
@@ -257,15 +276,16 @@ uploaded_out_example = col1_2.file_uploader("Choose OUTPUT EXAMPLE for training"
 uploaded_file = input_ph.file_uploader("Choose input image", type=['png', 'jpg']    )
 
 if uploaded_inp_example is not None and uploaded_out_example is not None and uploaded_file is not None:
-    train_inp_example = preprocess(uploaded_inp_example, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+    train_inp_example = preprocess(uploaded_inp_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
     train_int_col.image(train_inp_example, caption="INPUT EXAMPLE", width=250)
     train_inp_example = torch.tensor(train_inp_example)
 
-    train_out_example = preprocess(uploaded_out_example, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+    train_out_example = preprocess(uploaded_out_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
     train_out_col.image(train_out_example, caption="OUTPUT EXAMPLE", width=250)
     train_out_example = torch.tensor(train_out_example)
 
-    image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+    # image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+    image = preprocess(uploaded_file, image_size=OUTPUT_IMAGE_SIZE[0:2], gray_scale=False)
     input_col.image(image, width=250, caption='input image')
 
     net.add(train_inp_example, train_out_example)
