@@ -34,6 +34,7 @@ def preprocess(bytes_image, image_size=(64, 64), gray_scale=False):
         # normalize
         image = np.array(image) / 255
         image = np.expand_dims(image, axis=2)
+        image = np.tile(image, (1, 3))
     else:
         # normalize
         image = np.array(image) / 255
@@ -53,6 +54,7 @@ def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False, ret
         gray_image = ImageOps.grayscale(image)
         gray_image = np.array(gray_image) / 255
         gray_image = np.expand_dims(gray_image, axis=2)
+        gray_image = np.tile(gray_image, (1, 3))
 
         image = np.array(image) / 255
         if len(image.shape) < 3:
@@ -172,7 +174,8 @@ class NeuralMem(nn.Module):
         # st.write(f'Out shape: {out.shape}')
         return out
 
-    def add(self, input_example, output_example):
+    def add(self, input_example, output_example, progress_ph):
+        # train_status_ph....
         # takes two tensor arrays as input.
         # input shape of each example is HxWxC and is changed into CxHxW
         # both examples need to have the same resolution
@@ -191,49 +194,50 @@ class NeuralMem(nn.Module):
         unfolded1 = unfolded1.permute(1, 0)
         unfolded2 = unfolded2.permute(1, 0)
 
-        with st.spinner('TRAINING in progress...'):
-            unfolded1 = unfolded1.contiguous().numpy().astype('float32')
-            unfolded2 = unfolded2.contiguous().numpy().astype('float32')
-            if self.index_pretrain:
-                if not self.mem.is_trained:
-                    self.mem.train(unfolded1)
-            # Make sure the resolution is the same or the loop is gonna get wrong!
-            # Maybe use numpy.split() method on unfolded1
-            # TODO: make sure the indexing is correct!
-            train_progress_bar = st.progress(0)
-            for i, pattern1 in enumerate(unfolded1):
-                pattern1 = pattern1.reshape(1, -1)
-                pattern2 = unfolded2[i].reshape(1, -1)
-                # pattern1 = pattern1.unsqueeze(0)
-                # pattern2 = unfolded2[i].unsqueeze(0)
+        # with st.spinner('TRAINING in progress...'):
+        old_ntotal = self.mem.ntotal
+        unfolded1 = unfolded1.contiguous().numpy().astype('float32')
+        unfolded2 = unfolded2.contiguous().numpy().astype('float32')
+        if self.index_pretrain:
+            if not self.mem.is_trained:
+                self.mem.train(unfolded1)
+        # Make sure the resolution is the same or the loop is gonna get wrong!
+        # Maybe use numpy.split() method on unfolded1
+        # TODO: make sure the indexing is correct!
+        train_progress_bar = progress_ph.progress(0)
+        for i, pattern1 in enumerate(unfolded1):
+            pattern1 = pattern1.reshape(1, -1)
+            pattern2 = unfolded2[i].reshape(1, -1)
+            # pattern1 = pattern1.unsqueeze(0)
+            # pattern2 = unfolded2[i].unsqueeze(0)
 
-                # pattern1 = pattern1.numpy().astype('float32')
-                # pattern2 = pattern2.numpy().astype('float32')
+            # pattern1 = pattern1.numpy().astype('float32')
+            # pattern2 = pattern2.numpy().astype('float32')
 
-                d1, k1 = self.mem.search(pattern1, 1)
-                d2, k2 = self.mem2.search(pattern2, 1)
+            d1, k1 = self.mem.search(pattern1, 1)
+            d2, k2 = self.mem2.search(pattern2, 1)
 
-                k1 = int(k1[0][0])
-                k2 = int(k2[0][0])
+            k1 = int(k1[0][0])
+            k2 = int(k2[0][0])
 
-                # if the pattern1 is not in self.mem add it.
-                if d1[0][0] > 0:
-                    self.mem.add(pattern1)
-                    k1 = self.mem.ntotal - 1
-                    # if the pattern2 is not in self.mem2 add it.
-                if d2[0][0] > 0:
-                    self.mem2.add(pattern2)
-                    k2 = self.mem2.ntotal - 1
+            # if the pattern1 is not in self.mem add it.
+            if d1[0][0] > 0:
+                self.mem.add(pattern1)
+                k1 = self.mem.ntotal - 1
+                # if the pattern2 is not in self.mem2 add it.
+            if d2[0][0] > 0:
+                self.mem2.add(pattern2)
+                k2 = self.mem2.ntotal - 1
 
-                mappings = self.pattern_mappings.get(k1)
-                if mappings is None:
-                    mappings = Counter([k2])
-                    self.pattern_mappings[k1] = mappings
-                else:
-                    self.pattern_mappings[k1].update([k2])
-                    # mappings.update([k2])
-                train_progress_bar.progress(i / (len(unfolded1) - 1))
-            st.success(f'LEARNED: {self.mem.ntotal}\tpatterns in {time() -  t0} seconds!')
+            mappings = self.pattern_mappings.get(k1)
+            if mappings is None:
+                mappings = Counter([k2])
+                self.pattern_mappings[k1] = mappings
+            else:
+                self.pattern_mappings[k1].update([k2])
+                # mappings.update([k2])
+            train_progress_bar.progress(i / (len(unfolded1) - 1))
+            # st.success(f'LEARNED: {self.mem.ntotal-old_ntotal}\tpatterns in {time() -  t0} seconds!')
 
 
 image_sizes = [(2**x, 2**x, 3) for x in range(5, 10)]
@@ -247,9 +251,11 @@ add_selectbox = st.sidebar.selectbox(
     "Use index pretrain?",
     ("YES", "NO"), index=0
 )
+
 kernel_sizes = [(x,x) for x in range(1, 33)]
 KERNEL_SIZE = st.sidebar.selectbox(
     'Choose kernel size', options=kernel_sizes, index=4)
+use_dataset = st.sidebar.checkbox('Use dataset?', True)
 INDEX_PRETRAIN = True if add_selectbox == "YES" else False
 net = NeuralMem(image_size=TRAINING_IMAGE_SIZE, index_pretrain=INDEX_PRETRAIN, kernel_size=KERNEL_SIZE)
 
@@ -265,32 +271,58 @@ with st.beta_expander("FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION", ex
 
 
 col1_1, col1_2 = st.beta_columns(2)
-input_ph = st.empty()
+input_ph = st.empty() #button_col -> transform button
 train_int_col, train_out_col= st.beta_columns(2)
 input_col, output_col = st.beta_columns(2)
 rand_input_col, rand_output_col = st.beta_columns(2)
+progress_ph = st.empty()
+train_status1, train_status2 = st.beta_columns(2)
 
 
-uploaded_inp_example = col1_1.file_uploader("Choose INPUT EXAMPLE for training", type=['png', 'jpg'])
-uploaded_out_example = col1_2.file_uploader("Choose OUTPUT EXAMPLE for training", type=['png', 'jpg'])
-uploaded_file = input_ph.file_uploader("Choose input image", type=['png', 'jpg']    )
+if not use_dataset:
+    uploaded_inp_example = col1_1.file_uploader("Choose INPUT EXAMPLE for training", type=['png', 'jpg'])
+    uploaded_out_example = col1_2.file_uploader("Choose OUTPUT EXAMPLE for training", type=['png', 'jpg'])
+    uploaded_file = input_ph.file_uploader("Choose input image", type=['png', 'jpg'])
 
-if uploaded_inp_example is not None and uploaded_out_example is not None and uploaded_file is not None:
-    train_inp_example = preprocess(uploaded_inp_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
-    train_int_col.image(train_inp_example, caption="INPUT EXAMPLE", width=250)
-    train_inp_example = torch.tensor(train_inp_example)
+    if uploaded_inp_example is not None and uploaded_out_example is not None and uploaded_file is not None:
+        train_inp_example = preprocess(uploaded_inp_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
+        train_int_col.image(train_inp_example, caption="INPUT EXAMPLE", width=250)
+        train_inp_example = torch.tensor(train_inp_example)
 
-    train_out_example = preprocess(uploaded_out_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
-    train_out_col.image(train_out_example, caption="OUTPUT EXAMPLE", width=250)
-    train_out_example = torch.tensor(train_out_example)
+        train_out_example = preprocess(uploaded_out_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
+        train_out_col.image(train_out_example, caption="OUTPUT EXAMPLE", width=250)
+        train_out_example = torch.tensor(train_out_example)
 
-    # image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
-    image = preprocess(uploaded_file, image_size=OUTPUT_IMAGE_SIZE[0:2], gray_scale=False)
-    input_col.image(image, width=250, caption='input image')
+        # image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+        image = preprocess(uploaded_file, image_size=OUTPUT_IMAGE_SIZE[0:2], gray_scale=False)
+        input_col.image(image, width=250, caption='input image')
 
-    net.add(train_inp_example, train_out_example)
-    output = net(torch.tensor(image)).numpy()
-    output_col.image(output, width=250, caption='output image')
+        net.add(train_inp_example, train_out_example)
+        output = net(torch.tensor(image)).numpy()
+        output_col.image(output, width=250, caption='output image')
+else:
+    uploaded_file = input_ph.file_uploader("Choose input image", type=['png', 'jpg'])
+
+    if uploaded_file is not None:
+        DATASET_PATH = 'C:/Users/Admin/Dataset/mini-dataset/test/images/'
+        dataset = ImageDataset(path=DATASET_PATH, image_size=TRAINING_IMAGE_SIZE[0:2], size=100)
+        # image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+        image = preprocess(uploaded_file, image_size=OUTPUT_IMAGE_SIZE[0:2], gray_scale=True)
+        input_col.image(image, width=250, caption='input image')
+
+        dataset_train_progress_bar = st.progress(0)
+        for i, example in enumerate(dataset):
+            train_inp_example, train_out_example = example
+            # col1_1.image(train_inp_example, width=250)
+            # col1_2.image(train_out_example, width=250)
+            train_inp_example = torch.tensor(train_inp_example)
+            train_out_example = torch.tensor(train_out_example)
+            # print(f'INP: {train_inp_example.shape}')
+            # print(f'OUT: {train_out_example.shape}')
+            net.add(train_inp_example, train_out_example, progress_ph)
+            dataset_train_progress_bar.progress((i+1)/(len(dataset)))
+        output = net(torch.tensor(image)).numpy()
+        output_col.image(output, width=250, caption='output image')
 
 
 
