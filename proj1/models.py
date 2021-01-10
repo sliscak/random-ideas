@@ -6,9 +6,9 @@
 import torch
 from torch import nn
 
-class Net_1(nn.Module):
+class Net1(nn.Module):
     def __init__(self):
-        super(Net_1, self).__init__()
+        super(Net1, self).__init__()
         # 64 * 64 input
         self.fc1 = nn.Linear(64*64, 2000)
         self.list = nn.Parameter(torch.randn(1000, 1))
@@ -42,9 +42,9 @@ class Net_1(nn.Module):
         # x = self.fc3(x)
 
 
-class Net_2(nn.Module):
+class Net2(nn.Module):
     def __init__(self):
-        super(Net_2, self).__init__()
+        super(Net2, self).__init__()
         # 64 * 64 input
         self.fc1 = nn.Linear(64*64, 2000)
         self.list = nn.Parameter(torch.randn(1000, 1))
@@ -78,9 +78,9 @@ class Net_2(nn.Module):
         # x = self.fc3(x)
 
 
-class Net_3(nn.Module):
+class Net3(nn.Module):
     def __init__(self):
-        super(Net_3, self).__init__()
+        super(Net3, self).__init__()
         # 64 * 64 input
         self.fc1 = nn.Linear(64*64, 2000)
         self.list = nn.Parameter(torch.randn(1000, 1))
@@ -113,9 +113,9 @@ class Net_3(nn.Module):
         # x = F.relu(self.fc2(x))
         # x = self.fc3(x)
 
-class Net_4(nn.Module):
+class Net4(nn.Module):
     def __init__(self):
-        super(Net_4, self).__init__()
+        super(Net4, self).__init__()
         # 64 * 64 input
         self.fc1 = nn.Linear(64*64, 2000)
         self.list = nn.Parameter(torch.randn(1000, 1))
@@ -148,9 +148,9 @@ class Net_4(nn.Module):
         # x = F.relu(self.fc2(x))
         # x = self.fc3(x)
 
-class Net_5(nn.Module):
+class Net5(nn.Module):
     def __init__(self):
-        super(Net_5, self).__init__()
+        super(Net5, self).__init__()
         # 64 * 64 input
         self.fc1 = nn.Linear(64*64, 1000)
         self.list = nn.Parameter(torch.randn(1000, 1))
@@ -180,9 +180,9 @@ class Net_5(nn.Module):
         # x = F.relu(self.fc2(x))
         # x = self.fc3(x)
 
-class Net_6(nn.Module):
+class Net6(nn.Module):
     def __init__(self, shape):
-        super(Net_6, self).__init__()
+        super(Net6, self).__init__()
         # 64 * 64 input
         self.fc1 = nn.Linear(64*64, 1000)
         self.list = nn.Parameter(torch.randn(1000, 1))
@@ -219,9 +219,9 @@ class Net_6(nn.Module):
         # x = self.fc3(x)
 
 
-class Net_7(nn.Module):
+class Net7(nn.Module):
     def __init__(self, shape):
-        super(Net_7, self).__init__()
+        super(Net7, self).__init__()
         # 64 * 64 input
         self.fc1 = nn.Linear(64*64, 1000)
         self.list = nn.Parameter(torch.randn(1000, 1))
