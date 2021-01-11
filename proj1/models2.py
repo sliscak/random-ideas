@@ -1,6 +1,6 @@
 """"
     Uncommented Net7 model from model.py in proj1 with removed exit statement.
-    Returns a parameter tensor that is most similar(has highest cosine similarity) to input tensor.
+    Returns a parameter tensor that is most similar(has highest cosine similarity) to embedding tensor.
 """
 
 import torch
