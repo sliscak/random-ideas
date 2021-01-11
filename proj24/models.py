@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import faiss
 
 class Net(nn.Module):
     def __init__(self, infeatures:int, capacity:int):
