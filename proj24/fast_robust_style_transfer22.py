@@ -17,7 +17,7 @@
     TODO: turn input patches grayscale and save such patches into the index,
         the patches associated to the grayscale patches stay colored.
         (grayscale patches will be linked to colored patches).
-    TODO:
+    TODO: save a hierarchy of patches of different resolution?
 """
 
 import os
