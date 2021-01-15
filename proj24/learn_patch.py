@@ -4,6 +4,8 @@
             Learns a input patch that is most similar to all of the patches of the image.
     TODO: If the loss is too high, learn another patch that complements the first one.(will reuqire a special loss function).(Repeat this procedure until the loss is low enough???)
     TODO: Stop learning when the weight change (difference between old weights(before weights update) and new weights(after weights update) of the network is less than a certain treshold.
+    TODO: Try to learn grayscale patch
+    TODO: What happens when the image changes resolution?, when i learn the the patch with a lower resolution image and the inference image is highger resolution or any other different resolution?
 """
 
 
