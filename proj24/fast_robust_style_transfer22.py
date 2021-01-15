@@ -5,6 +5,8 @@
         Get the index of the most similar patch, save a associated colored patch from the dictionary or list or other index into new tensor/array. (all patches are saved into the tensor/array)
         Use the 'torch.nn.functional.fold' function to stitch/combine all patches of the tensor/array together into a new image.
         Return the new image.
+        Or if the stride value (for the fold function) is equal to kernel size we could replace the patches directly on the image and so making a new image.
+        ( replacing the patches on the image with the new colored patches)
 
     Breaks down an input image into
     DONE: remove/skip duplicate patterns/kernels from faiss index/memory
