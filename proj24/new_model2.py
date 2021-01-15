@@ -66,7 +66,7 @@ def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False, ret
 
 # models is called OnePatch
 class PatchLayer(nn.Module):
-    def __init__(self, input_size=(64, 64), kernel_size=(32, 32), num_patches: int = 100):
+    def __init__(self, input_size=(64, 64, 3), kernel_size=(32, 32), num_patches: int = 100):
         super(PatchLayer, self).__init__()
         self.output_size = input_size
         self.kernel = kernel_size
@@ -89,25 +89,32 @@ class PatchLayer(nn.Module):
         for patch in self.patches:
             cosim = 1 - torch.cosine_similarity(unfolded, patch)
             cosim = cosim.sum(0) / unfolded.shape[0] # normalize the similarity
-            cosim = cosim.unsqueeze(0)
+            cosim = cosim.unsqueeze(0)#.unsqueeze(0)
+            # cosim = cosim.reshape(1)
             if output is None:
                 output = cosim
-        return cosim
+            else:
+                output = torch.cat((output, cosim))
+        return output
 
 class PatchNet(nn.Module):
-    def __init__(self, input_size=(64, 64), kernel_size=(32, 32)):
+    def __init__(self, input_size=(64, 64, 3), kernel_size=(32, 32)):
         super(PatchNet, self).__init__()
         # self.block = nn.ModuleList(
         #     PatchLayer
         # )
-        self.layer = PatchLayer(input_size=input_size, kernel_size=kernel_size, num_patches=1)
+        self.first_layer = PatchLayer(input_size=input_size, kernel_size=kernel_size, num_patches=100)
+        self.last_layer = PatchLayer(input_size=(10, 10, 1), kernel_size=(2, 2), num_patches=1)
 
     def forward(self, image):
         """"
             Input is a image tensor
         """
-        output = self.layer(image)
-        return output
+        o = self.first_layer(image) # o is of size 100
+        o = o.reshape(10,10,1) # use BxWxH --> 10x10x1   because 10x10 == 100
+        o = self.last_layer(o)
+        # st.write(o.shape)
+        return o
 
 
 image_sizes = [(2**x, 2**x, 3) for x in range(5, 10)]
@@ -151,6 +158,7 @@ uploaded_file = input_ph.file_uploader("Choose input image", type=['png', 'jpg']
 if uploaded_file is not None:
     with st.spinner('TRAINING in progress...'):
         image = preprocess(uploaded_file, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
+        # image has shape HxWxC
         input_col.image(image, width=250, caption='input image')
         while True:
             optimizer.zero_grad()
@@ -159,10 +167,10 @@ if uploaded_file is not None:
             optimizer.step()
             loss_ph.write(f'LOSS: {loss.clone().detach().numpy()}')
             # patch = net.patch.clone().detach()
-            patch = net.layer.patches[0].clone().detach()
-            patch = patch.reshape(KERNEL_SIZE[0], KERNEL_SIZE[1], 3).numpy()
-            # output = net(torch.tensor(image)).numpy()
-            output_col.image(patch, width=250, caption='output image')
+            # patch = net.layer.patches[0].clone().detach()
+            # patch = patch.reshape(KERNEL_SIZE[0], KERNEL_SIZE[1], 3).numpy()
+            # # output = net(torch.tensor(image)).numpy()
+            # output_col.image(patch, width=250, caption='output image')
             sleep(1)
 
 
