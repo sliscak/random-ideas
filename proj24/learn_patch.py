@@ -3,7 +3,7 @@
         Learning a patch which is most similar(cosine similarity) to the patches of the image/images (cosine similarity search after breaking down the image into patches)
         # Learns a input patch would be most similar to all of the patches of the image.
     TODO: If the loss is too high, learn another patch that complements the first one.(will reuqire a special loss function).(Repeat this procedure until the loss is low enough???)
-    TODO: Stop learning when the weight change (difference between old weight(before weight update) and new weight(after weight update) of the network is less than a certain treshold.
+    TODO: Stop learning when the weight change (difference between old weights(before weights update) and new weights(after weights update) of the network is less than a certain treshold.
 """
 
 
