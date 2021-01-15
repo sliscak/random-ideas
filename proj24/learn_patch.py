@@ -139,7 +139,7 @@ uploaded_file = input_ph.file_uploader("Choose input image", type=['png', 'jpg']
 
 if uploaded_file is not None:
     with st.spinner('TRAINING in progress...'):
-        image = preprocess(uploaded_file, image_size=OUTPUT_IMAGE_SIZE[0:2], gray_scale=False)
+        image = preprocess(uploaded_file, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
         input_col.image(image, width=250, caption='input image')
         while True:
             optimizer.zero_grad()
