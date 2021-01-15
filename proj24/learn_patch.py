@@ -6,6 +6,7 @@
     TODO: Stop learning when the weight change (difference between old weights(before weights update) and new weights(after weights update) of the network is less than a certain treshold.
     TODO: Try to learn grayscale patch
     TODO: What happens when the image changes resolution?, when the training image and input image for inference have a different resolution? is the pattern still similar?? What happens when i learn the the patch with a lower resolution image and the inference image is highger resolution or any other different resolution?
+    TODO: What happens when we
 """
 
 
@@ -74,10 +75,10 @@ def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False, ret
                 return None
         return image
 
-
-class NeuralMem(nn.Module):
+# models is called OnePatch
+class OnePatch(nn.Module):
     def __init__(self, image_size=(64, 64), kernel_size=(32, 32)):
-        super(NeuralMem, self).__init__()
+        super(OnePatch, self).__init__()
         self.output_size = image_size
         self.kernel = kernel_size
         self.dimensions = int(np.product(self.kernel) * self.output_size[2])
