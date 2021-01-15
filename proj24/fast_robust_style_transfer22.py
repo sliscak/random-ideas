@@ -1,5 +1,12 @@
 """"
-    Fast and Robust Image StyleTransfer and Colorization by providing INPUT and OUTPUT example pairs and using similarity search.
+    Fast and Robust Image StyleTransfer and Colorization by providing INPUT and OUTPUT example pairs, saving patches into index, and using similarity search over the index with the incoming input image patches.
+    Training: break down both INPUT and OUTPUT example images into patches a associate/link them.
+    Inference: break down user input image into patches, for every patch: similarity search the index, finding most similar patch.
+        Get the index of the most similar patch, save a associated colored patch from the dictionary or list or other index into new tensor/array. (all patches are saved into the tensor/array)
+        Use the 'torch.nn.functional.fold' function to stitch/combine all patches of the tensor/array together into a new image.
+        Return the new image.
+
+    Breaks down an input image into
     DONE: remove/skip duplicate patterns/kernels from faiss index/memory
     TODO: learn/train at lower resolution
     TODO: rotate and mirror the patterns/kernels and use other transformations and augmentations.
@@ -8,7 +15,7 @@
     TODO: turn input patches grayscale and save such patches into the index,
         the patches associated to the grayscale patches stay colored.
         (grayscale patches will be linked to colored patches).
-
+    TODO:
 """
 
 import os
