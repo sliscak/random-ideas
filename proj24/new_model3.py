@@ -103,16 +103,17 @@ class PatchNet(nn.Module):
         # self.block = nn.ModuleList(
         #     PatchLayer
         # )
-
-        self.first_layer = PatchLayer(input_size=input_size, kernel_size=kernel_size, num_patches=100)
-        self.last_layer = PatchLayer(input_size=(10, 10, 1), kernel_size=(2, 2), num_patches=1)
+        self.inp_shape = (32, 32, 1)
+        self.first_layer = PatchLayer(input_size=input_size, kernel_size=kernel_size, num_patches=np.product(self.inp_shape))
+        self.last_layer = PatchLayer(input_size=self.inp_shape, kernel_size=(32, 32), num_patches=1)
 
     def forward(self, image):
         """"
             Input is a image tensor
         """
         o = self.first_layer(image) # o is of size 100
-        o = o.reshape(10,10,1) # use BxWxH --> 10x10x1   because 10x10 == 100
+        # o = o.reshape(10,10,1) # use BxWxH --> 10x10x1   because 10x10 == 100
+        o = o.reshape(self.inp_shape)
         o = self.last_layer(o)
         # st.write(o.shape)
         return o
@@ -169,9 +170,12 @@ if uploaded_file is not None:
             loss_ph.write(f'LOSS: {loss.clone().detach().numpy()}')
             # patch = net.patch.clone().detach()
             # patch = net.layer.patches[0].clone().detach()
+            patch = net.last_layer.patches[0].clone().detach()
             # patch = patch.reshape(KERNEL_SIZE[0], KERNEL_SIZE[1], 3).numpy()
-            # # output = net(torch.tensor(image)).numpy()
-            # output_col.image(patch, width=250, caption='output image')
+            # patch = patch.reshape(5, 5, 3).numpy()
+            patch = patch.reshape(net.inp_shape[0], net.inp_shape[1], 1).numpy()
+            # output = net(torch.tensor(image)).numpy()
+            output_col.image(patch, width=250, caption='output image')
             sleep(1)
 
 
