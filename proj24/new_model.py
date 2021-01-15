@@ -65,15 +65,38 @@ def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False, ret
         return image
 
 # models is called OnePatch
-class PatchNet(nn.Module):
-    def __init__(self, image_size=(64, 64), kernel_size=(32, 32)):
-        super(PatchNet, self).__init__()
-        self.output_size = image_size
+class PatchLayer(nn.Module):
+    def __init__(self, input_size=(64, 64), kernel_size=(32, 32), num_patches=100):
+        super(PatchLayer, self).__init__()
+        self.output_size = input_size
         self.kernel = kernel_size
         self.dimensions = int(np.product(self.kernel) * self.output_size[2])
         self.stride = 1
         self.padding = 10
-        self.patches = nn.ParameterList([nn.Parameter(torch.rand(1,self.dimensions)) for i in range(100)])
+        self.patches = nn.ParameterList([nn.Parameter(torch.rand(1,self.dimensions)) for i in range(num_patches)])
+
+    def forward(self, image):
+        """"
+            Input is a image tensor
+        """
+        output_size = image.shape
+        image = image.permute(2, 0, 1)
+        image = image.unsqueeze(0)
+        unfolded = torch.nn.functional.unfold(image, kernel_size=self.kernel, stride=self.stride, padding=self.padding)
+        unfolded = unfolded.squeeze(0)
+        unfolded = unfolded.permute(1, 0)
+        # st.write(unfolded.shape)
+        cosim = 1 - torch.cosine_similarity(unfolded, self.patch)
+        cosim = cosim.sum(0) / unfolded.shape[0] # normalize the similarity
+        return cosim
+
+class PatchNet(nn.Module):
+    def __init__(self, input_size=(64, 64), kernel_size=(32, 32)):
+        super(PatchNet, self).__init__()
+        # self.block = nn.ModuleList(
+        #     PatchLayer
+        # )
+        self.layer = PatchLayer(input_size=input_size, kernel_size=kernel_size, num_patches=1)
 
     def forward(self, image):
         """"
@@ -103,11 +126,11 @@ stride_vals = [x for x in range(1, 11)]
 STRIDE = st.sidebar.selectbox(
     'Choose stride value', options=stride_vals, index=4)
 
-net = NeuralMem(image_size=TRAINING_IMAGE_SIZE, kernel_size=KERNEL_SIZE)
+net = PatchNet(input_size=TRAINING_IMAGE_SIZE, kernel_size=KERNEL_SIZE)
 optimizer = optim.AdamW(params=net.parameters(), lr=0.03)
 
 # with st.beta_expander("FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION", expanded=True):
-#     # header1 = st.write('## FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION')
+#     # header1 = st.write('## FAST AND ROBUST IMAGE STREETCARS AND COLORIZATION')
 #     header2 = st.markdown('#### by providing input and output example image pairs and by using similarity search')
 #     header3 = st.markdown('##### Transfer the style of images by providing input and output example images.')
 #     header4 = st.markdown('##### Colorize images by providing black-white or grayscale input and colored output example images(like grayscale photo as input example and colored photo as output example for training)')
