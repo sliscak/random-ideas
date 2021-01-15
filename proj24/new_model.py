@@ -1,14 +1,3 @@
-""""
-    Learn a single patch that represents one image, or multiple images of the same class/domain. The patch then represent that particular image or image class/classes. We can the save it into an faiss index and later similarity search for it and like this classify an image.
-        Learning a patch which is most similar(by cosine similarity as loss) to the patches of the image/images (cosine similarity search after breaking down the image into patches)
-            Learns a input patch that is most similar to all of the patches of the image.
-    TODO: If the loss is too high, learn another patch that complements the first one.(will reuqire a special loss function).(Repeat this procedure until the loss is low enough???)
-    TODO: Stop learning when the weight change (difference between old weights(before weights update) and new weights(after weights update) of the network is less than a certain treshold.
-    TODO: Try to learn grayscale patch
-    TODO: What happens when the image changes resolution?, when the training image and input image for inference have a different resolution? is the pattern still similar?? What happens when i learn the the patch with a lower resolution image and the inference image is highger resolution or any other different resolution?
-    TODO: What happens when we
-"""
-
 
 import os
 
@@ -76,15 +65,15 @@ def load_img(path: str = "image.png", image_size=(64, 64), gray_scale=False, ret
         return image
 
 # models is called OnePatch
-class OnePatch(nn.Module):
+class PatchNet(nn.Module):
     def __init__(self, image_size=(64, 64), kernel_size=(32, 32)):
-        super(OnePatch, self).__init__()
+        super(PatchNet, self).__init__()
         self.output_size = image_size
         self.kernel = kernel_size
         self.dimensions = int(np.product(self.kernel) * self.output_size[2])
         self.stride = 1
         self.padding = 10
-        self.patch = nn.Parameter(torch.rand(1,self.dimensions))
+        self.patches = nn.ParameterList([nn.Parameter(torch.rand(1,self.dimensions)) for i in range(100)])
 
     def forward(self, image):
         """"
@@ -114,7 +103,7 @@ stride_vals = [x for x in range(1, 11)]
 STRIDE = st.sidebar.selectbox(
     'Choose stride value', options=stride_vals, index=4)
 
-net = OnePatch(image_size=TRAINING_IMAGE_SIZE, kernel_size=KERNEL_SIZE)
+net = NeuralMem(image_size=TRAINING_IMAGE_SIZE, kernel_size=KERNEL_SIZE)
 optimizer = optim.AdamW(params=net.parameters(), lr=0.03)
 
 # with st.beta_expander("FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION", expanded=True):
