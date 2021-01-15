@@ -2,7 +2,7 @@
     Learn a single patch that represents one image, or multiple images of the same class/domain. The patch then represent that particular image or image class/classes.
         Learning a patch which is most similar(cosine similarity) to the patches of the image/images (cosine similarity search after breaking down the image into patches)
         # Learns a input patch would be most similar to all of the patches of the image.
-    If the loss is too high, learn another patch that complements the first one.(will reuqire a special loss function).(Repeat this procedure until the loss is low enough???)
+    TODO: If the loss is too high, learn another patch that complements the first one.(will reuqire a special loss function).(Repeat this procedure until the loss is low enough???)
 """
 
 
