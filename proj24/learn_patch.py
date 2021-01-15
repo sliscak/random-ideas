@@ -1,7 +1,7 @@
 """"
     Learn a single patch that represents one image, or multiple images of the same class/domain. The patch then represent that particular image or image class/classes.
-        Learning a patch which is most similar(cosine similarity) to the patches of the image/images (cosine similarity search after breaking down the image into patches)
-        # Learns a input patch would be most similar to all of the patches of the image.
+        Learning a patch which is most similar(by cosine similarity as loss) to the patches of the image/images (cosine similarity search after breaking down the image into patches)
+            Learns a input patch that is most similar to all of the patches of the image.
     TODO: If the loss is too high, learn another patch that complements the first one.(will reuqire a special loss function).(Repeat this procedure until the loss is low enough???)
     TODO: Stop learning when the weight change (difference between old weights(before weights update) and new weights(after weights update) of the network is less than a certain treshold.
 """
@@ -102,17 +102,14 @@ class NeuralMem(nn.Module):
 image_sizes = [(2**x, 2**x, 3) for x in range(5, 10)]
 TRAINING_IMAGE_SIZE = st.sidebar.selectbox(
     'Choose TRAINING image size', options=image_sizes, index=1)
-OUTPUT_IMAGE_SIZE = st.sidebar.selectbox(
-    'Choose OUTPUT image size', options=image_sizes, index=1)
-# IMAGE_SIZE = (64, 64, 3)
-# IMAGE_SIZE = (128, 128, 3)
-add_selectbox = st.sidebar.selectbox(
-    "Use index pretrain?",
-    ("YES", "NO"), index=0
-)
+
 kernel_sizes = [(x,x) for x in range(1, 33)]
 KERNEL_SIZE = st.sidebar.selectbox(
     'Choose kernel size', options=kernel_sizes, index=4)
+
+stride_vals = [x for x in range(1, 11)]
+STRIDE = st.sidebar.selectbox(
+    'Choose stride value', options=stride_vals, index=4)
 
 net = NeuralMem(image_size=TRAINING_IMAGE_SIZE, kernel_size=KERNEL_SIZE)
 optimizer = optim.AdamW(params=net.parameters(), lr=0.03)
@@ -127,6 +124,8 @@ optimizer = optim.AdamW(params=net.parameters(), lr=0.03)
 # video_bytes = video_file.read()
 # st.video(video_bytes)
 
+with st.beta_expander("LEARN A SINGLE PATTERN FROM ONE IMAGE OR MULTIPLE IMAGES THAT WILL REPRESENT THAT PARTICULAR IMAGE OR IMAGE CLASS", expanded=True):
+    pass
 
 col1_1, col1_2 = st.beta_columns(2)
 input_ph = st.empty()
