@@ -18,7 +18,8 @@
         the patches associated to the grayscale patches stay colored.
         (grayscale patches will be linked to colored patches).
     TODO: save a hierarchy of patches of different resolution?
-    TODO: associate/link patches/tiles spatialy(in space) with the help of a graph.
+    TODO: associate/link patches/tiles spatialy(in space) with the help of a graph (or a python Dictionary)
+    TODO: fix bug where sometimes after index-pretraining the search faills
 
 """
 
@@ -35,6 +36,8 @@ from collections import Counter
 from PIL import Image
 from PIL import ImageOps
 from torch.utils.data import Dataset
+from pyvis.network import Network # TODO: rename??
+import streamlit.components.v1 as components
 
 
 def preprocess(bytes_image, image_size=(64, 64), gray_scale=False):
@@ -130,7 +133,8 @@ class NeuralMem(nn.Module):
         self.padding = padding
         self.pattern_mappings = {}
         self.index_pretrain = index_pretrain
-        self.graph = networkx.Graph()
+        # self.graph = networkx.Graph()
+        self.graph = Network(height="600px", width="100%", bgcolor="#222222", font_color="white")
         self.nlist = 100
         # self.mem = faiss.IndexFlatL2(self.dimensions)
         if self.index_pretrain:
@@ -143,11 +147,13 @@ class NeuralMem(nn.Module):
             self.mem = faiss.IndexFlatL2(self.dimensions)
 
         self.mem2 = faiss.IndexFlatL2(self.dimensions)
+        self.num_horizontal_patches = int((TRAINING_IMAGE_SIZE[0] - KERNEL_SIZE[0] + 2 * PADDING) / STRIDE) + 1
+        self.num_vertical_patches = int((TRAINING_IMAGE_SIZE[1] - KERNEL_SIZE[1] + 2 * PADDING) / STRIDE) + 1
 
 
     def forward(self, image):
         """"
-            Input is a image tensor
+            Input is a image tensor in shape (channels, height, width) where channels is 3
         """
         output_size = image.shape
 
@@ -206,6 +212,10 @@ class NeuralMem(nn.Module):
         unfolded1 = unfolded1.permute(1, 0)
         unfolded2 = unfolded2.permute(1, 0)
 
+        # TODO: replace with patch_id_map = np.zeros(self.num_horizontal_patches*self.num_vertical_patches) and remove flatten.
+        patch_id_map = np.zeros((self.num_horizontal_patches, self.num_vertical_patches)) # TODO: check if the order correct!
+        patch_id_map = patch_id_map.flatten()
+
         with st.spinner('TRAINING in progress...'):
             unfolded1 = unfolded1.contiguous().numpy().astype('float32')
             unfolded2 = unfolded2.contiguous().numpy().astype('float32')
@@ -218,6 +228,9 @@ class NeuralMem(nn.Module):
             st.write(f'SHAPE: {unfolded1.shape}')
             train_progress_bar = st.progress(0)
             for i, pattern1 in enumerate(unfolded1):
+                # if row == (self.num_horizontal_patches - 1):
+                #     pass
+
                 pattern1 = pattern1.reshape(1, -1)
                 pattern2 = unfolded2[i].reshape(1, -1)
                 # pattern1 = pattern1.unsqueeze(0)
@@ -236,6 +249,7 @@ class NeuralMem(nn.Module):
                 if d1[0][0] > 0:
                     self.mem.add(pattern1)
                     k1 = self.mem.ntotal - 1
+                    self.graph.add_node(k1)
                     # if the pattern2 is not in self.mem2 add it.
                 if d2[0][0] > 0:
                     self.mem2.add(pattern2)
@@ -248,8 +262,52 @@ class NeuralMem(nn.Module):
                 else:
                     self.pattern_mappings[k1].update([k2])
                     # mappings.update([k2])
+
+
+                patch_id_map[i] = k1
+
+                # self.graph.add_node(k1)
+                # column = (i+1) % (self.num_horizontal_patches) == 0
+                # row = i//self.num_horizontal_patches
+                #
+                # if column < (self.num_horizontal_patches - 1):
+                #     self.graph.add_edge(k1, k1 + 2)
+                # # if row == 0:
+
                 train_progress_bar.progress(i / (len(unfolded1) - 1))
+
+            # column = (i+1) % (self.num_horizontal_patches) == 0
+            # row = i//self.num_horizontal_patches
+            # for i, id in enumerate(patch_id_map):
+            patch_id_map = patch_id_map.reshape((self.num_vertical_patches, self.num_horizontal_patches))
+
+            # for directed graph
+            if False:
+                for y in range(self.num_vertical_patches):
+                    for x in range(self.num_horizontal_patches):
+                        if x < (self.num_horizontal_patches - 1):
+                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y, x + 1)])
+                        if x > 0:
+                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y, x - 1)])
+
+                        if y < (self.num_vertical_patches - 1):
+                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y + 1, x)])
+
+                        if y > 0:
+                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y -  1, x)])
+
+            # For directed graph
+            if True:
+                for y in range(self.num_vertical_patches):
+                    for x in range(self.num_horizontal_patches):
+                        if x < (self.num_horizontal_patches - 1):
+                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y, x + 1)])
+                        if y < (self.num_vertical_patches - 1):
+                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y + 1, x)])
+
+
             st.success(f'LEARNED: {self.mem.ntotal}\tpatterns in {time() -  t0} seconds!')
+            # st.write(patch_id_map)
 
 
 image_sizes = [(2**x, 2**x, 3) for x in range(5, 10)]
@@ -323,7 +381,11 @@ if uploaded_inp_example is not None and uploaded_out_example is not None and upl
     output = net(torch.tensor(image)).numpy()
     output_col.image(output, width=250, caption='output image')
 
-
+    # st.write(net.graph)
+    net.graph.write_html('graph.html')
+    # components.html(net.graph.html, height)
+    components.html(net.graph.html, height= 600)
+    # st.write(html)
 
 #
 # image = torch.rand(IMAGE_SIZE)
