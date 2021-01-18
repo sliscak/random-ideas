@@ -5,3 +5,4 @@ streamlit==0.73.1
 torch==1.7.1
 torchaudio==0.7.2
 torchvision==0.8.2
+networkx==2.5
