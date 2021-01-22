@@ -21,6 +21,7 @@
     TODO: associate/link patches/tiles spatialy(in space) with the help of a graph (or a python Dictionary)
     TODO: fix bug where sometimes after index-pretraining the search faills
 
+    USAGE-> enter command: "streamlit run fast_robust_style_transfer31.py"
 """
 
 import os

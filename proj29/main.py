@@ -179,7 +179,7 @@ class NeuralMem(nn.Module):
             for i, mappings_id in enumerate(ks):
                 mappings_id = int(mappings_id[0])
                 candidates = self.patches_meta[mappings_id]
-                breakpoint()
+                # breakpoint()
                 # if len(self.pattern_mappings[mappings_id].most_common(10)) > 2:
                 #     st.write(f'MOST COMMON: {self.pattern_mappings[mappings_id].most_common(3)}')
                 pattern_id = self.pattern_mappings[mappings_id].most_common(1)[0][0]
