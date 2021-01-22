@@ -32,13 +32,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import networkx
 from time import time
-from collections import Counter
+from collections import Counter, namedtuple
 from PIL import Image
 from PIL import ImageOps
 from torch.utils.data import Dataset
 from pyvis.network import Network # TODO: rename??
 import streamlit.components.v1 as components
-
 
 def preprocess(bytes_image, image_size=(64, 64), gray_scale=False):
     """"
@@ -120,6 +119,9 @@ class ImageDataset(Dataset):
         sample = x, y
         return sample
 
+
+PatchConnections = namedtuple('PatchConnections', ['up', 'down', 'left', 'right'])
+
 class NeuralMem(nn.Module):
     def __init__(self, image_size=(64, 64), index_pretrain=False, kernel_size=(32, 32), stride:int=1, padding:int=10):
         super(NeuralMem, self).__init__()
@@ -136,6 +138,7 @@ class NeuralMem(nn.Module):
         # self.graph = networkx.Graph()
         self.graph = Network(height="600px", width="100%", bgcolor="#222222", font_color="white")
         self.nlist = 100
+        self.patches_meta = []
         # self.mem = faiss.IndexFlatL2(self.dimensions)
         if self.index_pretrain:
             self.quantizer = faiss.IndexFlatL2(self.dimensions)
@@ -169,8 +172,14 @@ class NeuralMem(nn.Module):
             ds, ks = self.mem.search(unfolded, 1)
             out = None
             st.write(f'SHAPE: {unfolded.shape}')
+            # all_mappings = [int(mappings_id[0]) for mappings_id in ks]
+            # for mapping in all_mappings:
+            #
+
             for i, mappings_id in enumerate(ks):
                 mappings_id = int(mappings_id[0])
+                candidates = self.patches_meta[mappings_id]
+                breakpoint()
                 # if len(self.pattern_mappings[mappings_id].most_common(10)) > 2:
                 #     st.write(f'MOST COMMON: {self.pattern_mappings[mappings_id].most_common(3)}')
                 pattern_id = self.pattern_mappings[mappings_id].most_common(1)[0][0]
@@ -213,7 +222,7 @@ class NeuralMem(nn.Module):
         unfolded2 = unfolded2.permute(1, 0)
 
         # TODO: replace with patch_id_map = np.zeros(self.num_horizontal_patches*self.num_vertical_patches) and remove flatten.
-        patch_id_map = np.zeros((self.num_horizontal_patches, self.num_vertical_patches)) # TODO: check if the order correct!
+        patch_id_map = np.zeros((self.num_horizontal_patches, self.num_vertical_patches), dtype=int) # TODO: check if the order correct!
         patch_id_map = patch_id_map.flatten()
 
         with st.spinner('TRAINING in progress...'):
@@ -250,6 +259,7 @@ class NeuralMem(nn.Module):
                     self.mem.add(pattern1)
                     k1 = self.mem.ntotal - 1
                     self.graph.add_node(k1)
+                    self.patches_meta.append(PatchConnections(up=Counter(), down=Counter(), left=Counter(), right=Counter()))
                     # if the pattern2 is not in self.mem2 add it.
                 if d2[0][0] > 0:
                     self.mem2.add(pattern2)
@@ -266,6 +276,7 @@ class NeuralMem(nn.Module):
 
                 patch_id_map[i] = k1
 
+
                 # self.graph.add_node(k1)
                 # column = (i+1) % (self.num_horizontal_patches) == 0
                 # row = i//self.num_horizontal_patches
@@ -281,31 +292,30 @@ class NeuralMem(nn.Module):
             # for i, id in enumerate(patch_id_map):
             patch_id_map = patch_id_map.reshape((self.num_vertical_patches, self.num_horizontal_patches))
 
-            # for directed graph
-            if False:
-                for y in range(self.num_vertical_patches):
-                    for x in range(self.num_horizontal_patches):
-                        if x < (self.num_horizontal_patches - 1):
-                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y, x + 1)])
-                        if x > 0:
-                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y, x - 1)])
-
-                        if y < (self.num_vertical_patches - 1):
-                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y + 1, x)])
-
-                        if y > 0:
-                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y -  1, x)])
-
-            # For directed graph
+            # # for directed graph
             if True:
                 for y in range(self.num_vertical_patches):
                     for x in range(self.num_horizontal_patches):
                         if x < (self.num_horizontal_patches - 1):
-                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y, x + 1)])
+                            self.patches_meta[patch_id_map[(y, x)]].right.update([patch_id_map[(y, x + 1)]])
+                        if x > 0:
+                            self.patches_meta[patch_id_map[(y, x)]].left.update([patch_id_map[(y, x - 1)]])
                         if y < (self.num_vertical_patches - 1):
-                            self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y + 1, x)])
+                            self.patches_meta[patch_id_map[(y, x)]].down.update([patch_id_map[(y + 1, x)]])
 
+                        if y > 0:
+                            self.patches_meta[patch_id_map[(y, x)]].up.update([patch_id_map[(y - 1, x)]])
+            #
+            # # For directed graph
+            # if True:
+            #     for y in range(self.num_vertical_patches):
+            #         for x in range(self.num_horizontal_patches):
+            #             if x < (self.num_horizontal_patches - 1):
+            #                 self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y, x + 1)])
+            #             if y < (self.num_vertical_patches - 1):
+            #                 self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y + 1, x)])
 
+            # st.write(self.patches_meta)
             st.success(f'LEARNED: {self.mem.ntotal}\tpatterns in {time() -  t0} seconds!')
             # st.write(patch_id_map)
 
@@ -382,10 +392,10 @@ if uploaded_inp_example is not None and uploaded_out_example is not None and upl
     output_col.image(output, width=250, caption='output image')
 
     # st.write(net.graph)
-    net.graph.write_html('graph.html')
-    # components.html(net.graph.html, height)
-    components.html(net.graph.html, height= 600, width=600)
-    # st.write(html)
+    # net.graph.write_html('graph.html')
+    # # components.html(net.graph.html, height)
+    # components.html(net.graph.html, height= 600)
+    # # st.write(html)
     # breakpoint()
 
 #
