@@ -172,8 +172,14 @@ class NeuralMem(nn.Module):
             ds, ks = self.mem.search(unfolded, 1)
             out = None
             st.write(f'SHAPE: {unfolded.shape}')
+            # all_mappings = [int(mappings_id[0]) for mappings_id in ks]
+            # for mapping in all_mappings:
+            #
+
             for i, mappings_id in enumerate(ks):
                 mappings_id = int(mappings_id[0])
+                candidates = self.patches_meta[mappings_id]
+                breakpoint()
                 # if len(self.pattern_mappings[mappings_id].most_common(10)) > 2:
                 #     st.write(f'MOST COMMON: {self.pattern_mappings[mappings_id].most_common(3)}')
                 pattern_id = self.pattern_mappings[mappings_id].most_common(1)[0][0]
@@ -309,7 +315,7 @@ class NeuralMem(nn.Module):
             #             if y < (self.num_vertical_patches - 1):
             #                 self.graph.add_edge(patch_id_map[(y, x)], patch_id_map[(y + 1, x)])
 
-            st.write(self.patches_meta)
+            # st.write(self.patches_meta)
             st.success(f'LEARNED: {self.mem.ntotal}\tpatterns in {time() -  t0} seconds!')
             # st.write(patch_id_map)
 
@@ -390,6 +396,7 @@ if uploaded_inp_example is not None and uploaded_out_example is not None and upl
     # # components.html(net.graph.html, height)
     # components.html(net.graph.html, height= 600)
     # # st.write(html)
+    # breakpoint()
 
 #
 # image = torch.rand(IMAGE_SIZE)
