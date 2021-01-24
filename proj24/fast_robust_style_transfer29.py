@@ -333,7 +333,7 @@ KERNEL_SIZE = st.sidebar.selectbox(
 
 stride_vals = [x for x in range(1, 11)]
 STRIDE = st.sidebar.selectbox(
-    'Choose stride value', options=stride_vals, index=4)
+    'Choose stride value', options=stride_vals, index=0)
 
 padding_vals = [x for x in range(11)]
 PADDING = st.sidebar.selectbox(

@@ -1,27 +1,4 @@
-""""
-    Fast and Robust Image StyleTransfer and Colorization by providing INPUT and OUTPUT example pairs, saving patches into index, and using similarity search over the index with the incoming input image patches.
-    Training: break down both INPUT and OUTPUT example images into patches/tiles a associate/link them.
-    Inference: break down user input image into patches/tiles, for every patch/tile: similarity search the index, finding most similar patch/tile.
-        Get the index of the most similar patch/tile, save a associated colored patch/tile from the dictionary or list or other index into new tensor/array. (all patches/tiles are saved into the tensor/array)
-        Use the 'torch.nn.functional.fold' function to stitch/combine all patches/tiles of the tensor/array together into a new image.
-        Return the new image.
-        Or if the stride value (for the fold function) is equal to kernel size we could replace the patches/tiles directly on the image and so make new image.
-        (replacing the patches on the image with the new colored patches/tiles)
 
-    Breaks down an input image into
-    DONE: remove/skip duplicate patterns/kernels from faiss index/memory
-    TODO: learn/train at lower resolution
-    TODO: rotate and mirror the patterns/kernels and use other transformations and augmentations.
-    TODO: increase speed by parallelizing the pattern retrieval(similarity search)
-    TODO: add a small cache for recently found(retrieved) patterns.
-    TODO: turn input patches grayscale and save such patches into the index,
-        the patches associated to the grayscale patches stay colored.
-        (grayscale patches will be linked to colored patches).
-    TODO: save a hierarchy of patches of different resolution?
-    TODO: associate/link patches/tiles spatialy(in space) with the help of a graph (or a python Dictionary)
-    TODO: fix bug where sometimes after index-pretraining the search faills
-
-"""
 
 import os
 import faiss
@@ -38,6 +15,7 @@ from PIL import ImageOps
 from torch.utils.data import Dataset
 from pyvis.network import Network # TODO: rename??
 import streamlit.components.v1 as components
+import cv2
 
 def preprocess(bytes_image, image_size=(64, 64), gray_scale=False):
     """"
@@ -350,17 +328,11 @@ st.sidebar.write(f'PATCHES:\t{num_patches}')
 
 # net = NeuralMem(image_size=TRAINING_IMAGE_SIZE, index_pretrain=INDEX_PRETRAIN, kernel_size=KERNEL_SIZE, stride=STRIDE, padding=PADDING)
 
-with st.beta_expander("FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION", expanded=True):
-    # header1 = st.write('## FAST AND ROBUST IMAGE STYLETRANSFER AND COLORIZATION')
-    header2 = st.markdown('#### by providing input and output example image pairs and by using similarity search')
-    header3 = st.markdown('##### Transfer the style of images by providing input and output example images.')
-    header4 = st.markdown('##### Colorize images by providing black-white or grayscale input and colored output example images(like grayscale photo as input example and colored photo as output example for training)')
-
-# video_file = open('tutorial.webm', 'rb')
-# video_bytes = video_file.read()
-# st.video(video_bytes)
 
 
+frame_ph = st.empty()
+button_ph = st.empty()
+button = button_ph.button('Add to dataset')
 col1_1, col1_2 = st.beta_columns(2)
 input_ph = st.empty()
 train_int_col, train_out_col= st.beta_columns(2)
@@ -368,35 +340,48 @@ input_col, output_col = st.beta_columns(2)
 rand_input_col, rand_output_col = st.beta_columns(2)
 
 
-uploaded_inp_example = col1_1.file_uploader("Choose INPUT EXAMPLE for training", type=['png', 'jpg'])
-uploaded_out_example = col1_2.file_uploader("Choose OUTPUT EXAMPLE for training", type=['png', 'jpg'])
-uploaded_file = input_ph.file_uploader("Choose input image", type=['png', 'jpg']    )
+# uploaded_inp_example = col1_1.file_uploader("Choose INPUT EXAMPLE for training", type=['png', 'jpg'])
+# uploaded_out_example = col1_2.file_uploader("Choose OUTPUT EXAMPLE for training", type=['png', 'jpg'])
+# uploaded_file = input_ph.file_uploader("Choose input image", type=['png', 'jpg']    )
 
-if uploaded_inp_example is not None and uploaded_out_example is not None and uploaded_file is not None:
-    net = NeuralMem(image_size=TRAINING_IMAGE_SIZE, index_pretrain=INDEX_PRETRAIN, kernel_size=KERNEL_SIZE,
-                    stride=STRIDE, padding=PADDING)
-    train_inp_example = preprocess(uploaded_inp_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
-    train_int_col.image(train_inp_example, caption="INPUT EXAMPLE", width=250)
-    train_inp_example = torch.tensor(train_inp_example)
+camera = cv2.VideoCapture(0)
+images = []
 
-    train_out_example = preprocess(uploaded_out_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
-    train_out_col.image(train_out_example, caption="OUTPUT EXAMPLE", width=250)
-    train_out_example = torch.tensor(train_out_example)
-
-    # image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
-    image = preprocess(uploaded_file, image_size=OUTPUT_IMAGE_SIZE[0:2], gray_scale=False)
-    input_col.image(image, width=250, caption='input image')
-
-    net.add(train_inp_example, train_out_example)
-    output = net(torch.tensor(image)).numpy()
-    output_col.image(output, width=250, caption='output image')
-
-    # st.write(net.graph)
-    # net.graph.write_html('graph.html')
-    # # components.html(net.graph.html, height)
-    # components.html(net.graph.html, height= 600)
-    # # st.write(html)
-    # breakpoint()
+while True:
+    ret, frame = camera.read()
+    if ret:
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_ph.image(frame, 'Camera')
+    if button:
+        images.append(frame)
+        for i, image in enumerate(images):
+            st.image(image, caption=f'i')
+        button = button_ph.button('add')
+    # if uploaded_inp_example is not None and uploaded_out_example is not None and uploaded_file is not None:
+    #     net = NeuralMem(image_size=TRAINING_IMAGE_SIZE, index_pretrain=INDEX_PRETRAIN, kernel_size=KERNEL_SIZE,
+    #                     stride=STRIDE, padding=PADDING)
+    #     train_inp_example = preprocess(uploaded_inp_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
+    #     train_int_col.image(train_inp_example, caption="INPUT EXAMPLE", width=250)
+    #     train_inp_example = torch.tensor(train_inp_example)
+    #
+    #     train_out_example = preprocess(uploaded_out_example, image_size=TRAINING_IMAGE_SIZE[0:2], gray_scale=False)
+    #     train_out_col.image(train_out_example, caption="OUTPUT EXAMPLE", width=250)
+    #     train_out_example = torch.tensor(train_out_example)
+    #
+    #     # image = preprocess(uploaded_file, image_size=IMAGE_SIZE[0:2], gray_scale=False)
+    #     image = preprocess(uploaded_file, image_size=OUTPUT_IMAGE_SIZE[0:2], gray_scale=False)
+    #     input_col.image(image, width=250, caption='input image')
+    #
+    #     net.add(train_inp_example, train_out_example)
+    #     output = net(torch.tensor(image)).numpy()
+    #     output_col.image(output, width=250, caption='output image')
+    #
+    #     # st.write(net.graph)
+    #     # net.graph.write_html('graph.html')
+    #     # # components.html(net.graph.html, height)
+    #     # components.html(net.graph.html, height= 600)
+    #     # # st.write(html)
+    #     # breakpoint()
 
 #
 # image = torch.rand(IMAGE_SIZE)
