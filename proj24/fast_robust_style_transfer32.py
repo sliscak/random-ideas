@@ -27,7 +27,7 @@
 
     USAGE-> enter those commands into terminal or bash:
         pip install requirements.txt
-        streamlit run fast_robust_style_transfer31.py
+        streamlit run fast_robust_style_transfer32.py
 """
 
 import os
