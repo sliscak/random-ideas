@@ -25,7 +25,9 @@
     TODO: normalize distance values??
     TODO: use grayscale patches as input saved into index and query
 
-    USAGE-> enter command: "streamlit run fast_robust_style_transfer31.py"
+    USAGE-> enter those commands into terminal or bash:
+        pip install requirements.txt
+        streamlit run fast_robust_style_transfer31.py
 """
 
 import os
