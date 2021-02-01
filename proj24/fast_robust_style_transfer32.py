@@ -182,7 +182,7 @@ class NeuralMem(nn.Module):
             #
             # st.write(ds)
             for i, mappings_id in enumerate(ks):
-                if ds[i] <= self.threshold:
+                if ds[i] >= self.threshold:
                     found = torch.tensor(unfolded[i]).unsqueeze(0)
                 else:
                     # st.write(unfolded[i])
