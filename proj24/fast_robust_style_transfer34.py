@@ -27,10 +27,8 @@
     TODO: spattialy link image patterns/tiles in four directions(left, right, up and down), every patch would be linked to his neighbours (patches near this patch; for this we should use a graph or dictionaries or at least a list/array), if a patch is retrieved we can see which patch or patches would follow in sequence vertically and horizontally.
                 (if using a graph we would be traversing a graph of patches to find neighbour patches)
             The neighbours(patches) have directions/positions, in an image they can be left or right if looking diagonally from the retrieved patch,  or up and down if horizontally.
-
             In an image the patch in the upper left corner would be connect/linked to its neighbours that are in two directions and that is: right and down.
             A patch would be connect to multiple patches in all(if using an image then four) directions because some patches are repeating in images and if we use multiple images then thats a given.
-
             When retrieving patches this could be used to make sure that recovered sequences of patches are spatially stable.
             TDLR: every patch would be spattialy linked linked in four directions to other patches relative to the patch itself.
 
