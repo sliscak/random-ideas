@@ -24,6 +24,9 @@
     TODO: fix bug where sometimes after index-pretraining the search faills
     TODO: normalize distance values??
     TODO: use grayscale patches as input saved into index and query
+    TODO: link image patterns/tiles in four directions, every patch would be linked to his neighbours (should use a graph for this), if a patch is retrieved we can see which patch or patches would follow in sequence vertically and horizontally.
+            In an image the patch in the upper left corner would be connect/linked to its neighbours that are in two directions and that is: right and down.
+            A patch would be connect to multiple patches because some patches are repeating in images and if we use multiple images then thats a given.
 
     USAGE-> enter those commands into terminal or bash:
         pip install requirements.txt
@@ -219,7 +222,7 @@ class NeuralMem(nn.Module):
 
     def add(self, input_example, output_example): # adds/appends patches to the index
         # takes two tensor arrays as input.
-        # input shape of each example is WxHxC and is changed into CxWxH
+        # input shape of each example is WxHxC and is changed into CxWxHx
         # both examples need to have the same resolution
         t0 = time()
         image1 = input_example.permute(2, 0, 1)
