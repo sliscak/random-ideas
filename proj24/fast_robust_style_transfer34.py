@@ -25,7 +25,7 @@
     TODO: normalize distance values??
     TODO: use grayscale patches as input saved into index and query
     TODO: spattialy link image patterns/tiles in four directions(left, right, up and down), every patch would be linked to his neighbours (patches near this patch; for this we should use a graph or dictionaries or at least a list/array), if a patch is retrieved we can see which patch or patches would follow in sequence vertically and horizontally.
-                (we would be traversing a graph of patches to find neighbour patches)
+                (if using a graph we would be traversing a graph of patches to find neighbour patches)
             The neighbours(patches) have directions/positions, in an image they can be left or right if looking diagonally from the retrieved patch,  or up and down if horizontally.
 
             In an image the patch in the upper left corner would be connect/linked to its neighbours that are in two directions and that is: right and down.
