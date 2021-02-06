@@ -24,9 +24,11 @@
     TODO: fix bug where sometimes after index-pretraining the search faills
     TODO: normalize distance values??
     TODO: use grayscale patches as input saved into index and query
-    TODO: link image patterns/tiles in four directions, every patch would be linked to his neighbours (should use a graph for this), if a patch is retrieved we can see which patch or patches would follow in sequence vertically and horizontally.
+    TODO: spattialy link image patterns/tiles in four directions(), every patch would be linked to his neighbours (patches near this patch; for this we should use a graph or dictionaries or at least a list/array), if a patch is retrieved we can see which patch or patches would follow in sequence vertically and horizontally.
+            The neighbours(patches) have a direction, in an image they can be left or right that if looking diagonally from the retrieved patch,  or up and down if horizontally.
             In an image the patch in the upper left corner would be connect/linked to its neighbours that are in two directions and that is: right and down.
-            A patch would be connect to multiple patches because some patches are repeating in images and if we use multiple images then thats a given.
+            A patch would be connect to multiple patches in all directions because some patches are repeating in images and if we use multiple images then thats a given.
+            When retrieving patches this could be used to make sure that recovered sequences of patches are spatially stable.
 
     USAGE-> enter those commands into terminal or bash:
         pip install requirements.txt
