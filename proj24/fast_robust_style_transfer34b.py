@@ -219,7 +219,7 @@ class NeuralMem(nn.Module):
 
     def add(self, input_example, output_example): # adds/appends patches to the index
         # takes two tensor arrays as input.
-        # input shape of each example is HxWxC and is changed into CxHxW
+        # input shape of each example is WxHxC and is changed into CxWxH
         # both examples need to have the same resolution
         t0 = time()
         image1 = input_example.permute(2, 0, 1)
