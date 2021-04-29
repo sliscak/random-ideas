@@ -1,8 +1,14 @@
 import torch
 from torch import nn
 
-# instead of using a dense layer i created a custom layer with trainable parameters(weights) and cosine similarity, called "Mem".
+""""
+    instead of using a dense layer i created a custom layer with trainable parameters(weights) and cosine similarity, called "Mem".
+"""
+
 class Mem(torch.nn.Module):
+    """"
+        Custom layer
+    """
     def __init__(self, input_size, output_size):
         super().__init__()
         self.param = nn.Parameter(torch.randn(output_size, input_size), requires_grad=True)
@@ -13,6 +19,9 @@ class Mem(torch.nn.Module):
         return o
 
 class Net(torch.nn.Module):
+    """"
+        Single custom layer neural network
+    """
     def __init__(self, input_size, output_size):
         super().__init__()
         self.layer = Mem(input_size, output_size)

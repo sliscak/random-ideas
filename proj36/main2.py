@@ -15,7 +15,9 @@ class Mem(torch.nn.Module):
 class Net(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
-        self.layer = Mem(input_size, output_size)
+        self.layer1 = Mem(input_size, 10)
+        self.layer2 = Mem(10, 10)
+        self.layer3 = Mem(10, output_size)
 
     def forward(self, x):
         x = self.layer(x)
