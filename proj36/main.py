@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-# instead of using a dense layer i used trainable parameters(weights) and cosine similarity
+# instead of using a dense layer i created a custom layer with trainable parameters(weights) and cosine similarity, called "Mem".
 class Mem(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
