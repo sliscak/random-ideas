@@ -13,6 +13,9 @@ class Mem(torch.nn.Module):
         return o
 
 class Net(torch.nn.Module):
+    """"
+        Multi custom layer neural network
+    """
     def __init__(self, input_size, output_size):
         super().__init__()
         self.layer1 = Mem(input_size, 10)
@@ -20,7 +23,9 @@ class Net(torch.nn.Module):
         self.layer3 = Mem(10, output_size)
 
     def forward(self, x):
-        x = self.layer(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
         return x
 
 
