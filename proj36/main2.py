@@ -1,7 +1,7 @@
 import torch
 from torch import nn
+from torch.optim import AdamW
 
-# instead of using a dense layer i used trainable parameters(weights) and cosine similarity
 class Mem(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
@@ -22,7 +22,18 @@ class Net(torch.nn.Module):
         return x
 
 
-net = Net(3, 10)
-input = torch.tensor([0,1,0], dtype=float)
-output = net(input)
-print(output)
+net = Net(3, 2)
+optimizer = AdamW(net.parameters(), lr=0.001)
+criterion = nn.MSELoss()
+
+
+while True:
+    x = torch.tensor([0,1,0], dtype=float)
+    y = torch.tensor([1,0], dtype=float)
+    output = net(x)
+    loss = criterion(output, y)
+    print(f'Loss: {loss.detach()}')
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
