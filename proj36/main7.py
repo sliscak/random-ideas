@@ -32,18 +32,34 @@ class Net(torch.nn.Module):
 
 placeholders_ = [[col.empty() for col in st.beta_columns(1)] for x in range(5)]
 placeholders = [[col.empty() for col in st.beta_columns(1)] for x in range(5)]
-net = Net(3, 2)
+net = Net(12, 12)
 optimizer = AdamW(net.parameters(), lr=0.001)
 criterion = nn.MSELoss()
 
-x_ = [torch.tensor([0, 1, 0], dtype=float), torch.tensor([0, 1, 1], dtype=float)]
-y_ = [torch.tensor([1, 0], dtype=float), torch.tensor([1, 1], dtype=float)]
+x_ = [torch.tensor([
+    [0, 1, 0, 0],
+    [1, 1, 1, 1],
+    [0, 1, 0, 0],
+], dtype=float), torch.tensor([
+    [0, 0, 1, 0],
+    [1, 1, 1, 1],
+    [0, 0, 1, 0],
+], dtype=float)]
+y_ = [torch.tensor([
+    [1, 0, 0, 0],
+    [1, 0, 0, 0],
+    [1, 0, 0, 0],
+], dtype=float), torch.tensor([
+    [0, 0, 0, 1],
+    [0, 0, 0, 1],
+    [0, 0, 0, 1],
+], dtype=float)]
 
 while True:
     for x,y in zip(x_, y_):
         placeholders_[0][0].write(x.detach().numpy())
         placeholders_[1][0].write(y.detach().numpy())
-        output = net(x)
+        output = net(x.flatten()).reshape((3, 4))
         loss = criterion(output, y)
         placeholders_[2][0].write(output.detach().numpy())
         print(f'Loss: {loss.detach()}')
@@ -55,7 +71,10 @@ while True:
         params = net.parameters()
         # print(list(enumerate(params)))
         for i, param in enumerate(params):
-            placeholders[i][0].write(param.detach().numpy())
+            if i == 0:
+                placeholders[i][0].write(param.reshape(-1, 3).detach().numpy())
+            else:
+                placeholders[i][0].write(param.detach().numpy())
         # print(params)
         # exit()
         # placeholders[0][0].write()
